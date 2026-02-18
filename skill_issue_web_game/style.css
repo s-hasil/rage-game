@@ -1,0 +1,100 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body{
+    height:100vh;
+    background: radial-gradient(circle at top,#0f2027,#203a43,#2c5364);
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    overflow:hidden;
+}
+
+.background-glow{
+    position:absolute;
+    width:600px;
+    height:600px;
+    background:cyan;
+    filter:blur(250px);
+    opacity:0.15;
+    animation: glowMove 8s infinite alternate;
+}
+
+@keyframes glowMove{
+    from{ transform:translate(-200px,-100px);}
+    to{ transform:translate(200px,100px);}
+}
+
+.container{
+    text-align:center;
+    z-index:2;
+    width:90%;
+    max-width:600px;
+}
+
+header h1{
+    font-size:3rem;
+    letter-spacing:3px;
+    text-shadow:0 0 25px cyan;
+}
+
+.tagline{
+    margin-top:8px;
+    color:#ff7675;
+    font-weight:bold;
+}
+
+.game-card{
+    margin-top:25px;
+    padding:15px;
+    border-radius:20px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    box-shadow:0 0 40px rgba(0,255,255,0.25);
+}
+
+canvas{
+    background:#050505;
+    border-radius:15px;
+}
+
+.controls{
+    margin-top:12px;
+    opacity:0.8;
+}
+
+.donate-card{
+    margin-top:25px;
+    padding:20px;
+    border-radius:20px;
+    background: linear-gradient(145deg,#141e30,#243b55);
+    box-shadow:0 0 30px rgba(0,255,255,0.2);
+}
+
+.donate-btn{
+    display:inline-block;
+    margin-top:12px;
+    padding:12px 22px;
+    border-radius:12px;
+    background:cyan;
+    color:black;
+    font-weight:bold;
+    text-decoration:none;
+    transition:0.3s;
+}
+
+.donate-btn:hover{
+    transform:scale(1.1);
+    box-shadow:0 0 20px cyan;
+}
+
+footer{
+    margin-top:18px;
+    font-size:0.8rem;
+    opacity:0.6;
+}
