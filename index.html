@@ -1,44 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>😈 Skill Issue - Rage Game</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🔥 Skill Issue: Hero Rush</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+    <div class="bg-aurora"></div>
+    <div class="bg-grid"></div>
 
-<div class="background-glow"></div>
+    <main class="app">
+        <header class="topbar glass">
+            <div>
+                <h1>🔥 SKILL ISSUE: HERO RUSH</h1>
+                <p class="subtitle">Dodge chaos. Flex reflexes. Survive the roast.</p>
+            </div>
+            <button id="soundToggle" class="icon-btn" aria-label="Toggle sound">🔊 Sound: ON</button>
+        </header>
 
-<div class="container">
+        <section id="menuScreen" class="panel glass active" aria-live="polite">
+            <h2>Ready to Rage?</h2>
+            <p>Play as a larger-than-life mallu-style action hero and survive falling neon doom.</p>
+            <div class="stats-row">
+                <div class="stat-pill">🏆 Best: <span id="menuBest">0</span></div>
+                <div class="stat-pill">⚡ Tip: Near-miss hazards for combo bonus</div>
+            </div>
+            <div class="menu-actions">
+                <button id="playBtn" class="primary-btn">▶ Play Now</button>
+                <a class="support-btn" href="https://buymeacoffee.com/" target="_blank" rel="noopener noreferrer">Support the Developer ❤️</a>
+            </div>
+            <p class="touch-tip">Desktop: A / D or ← / → &nbsp;|&nbsp; Mobile: Hold left/right controls</p>
+        </section>
 
-    <header>
-        <h1>😈 SKILL ISSUE</h1>
-        <p class="tagline">⚠️ Only 1% survive 60 seconds</p>
-    </header>
+        <section class="game-shell glass">
+            <canvas id="game" width="420" height="700" aria-label="Rage game canvas"></canvas>
+            <div id="hud" class="hud">
+                <div class="hud-card">Score <span id="scoreValue">0</span></div>
+                <div class="hud-card">Best <span id="bestValue">0</span></div>
+                <div class="hud-card">Combo <span id="comboValue">x1.0</span></div>
+            </div>
+            <div id="damageFlash" class="damage-flash"></div>
+            <div id="touchControls" class="touch-controls" aria-hidden="true">
+                <button id="leftBtn" class="touch-btn">⬅</button>
+                <button id="rightBtn" class="touch-btn">➡</button>
+            </div>
+        </section>
 
-    <div class="game-card">
-        <canvas id="game"></canvas>
-    </div>
+        <section id="gameOverScreen" class="panel glass" aria-live="polite">
+            <h2>💀 Hero Got Cooked</h2>
+            <p class="gameover-line">Score: <span id="finalScore">0</span></p>
+            <p class="gameover-line">Best: <span id="finalBest">0</span></p>
+            <div class="menu-actions">
+                <button id="restartBtn" class="primary-btn">🔁 Run It Back</button>
+                <button id="menuBtn" class="ghost-btn">🏠 Menu</button>
+            </div>
+        </section>
+    </main>
 
-    <div class="controls">
-        ⬅️ ➡️ Move | Avoid 🔴 | Survive.
-    </div>
-
-    <div class="donate-card">
-        <h2>❤️ Enjoying the Rage?</h2>
-        <p>Support the developer and help create more addictive games.</p>
-        <a class="donate-btn" href="https://buymeacoffee.com/YOURNAME" target="_blank">
-            ☕ Buy Me a Coffee
-        </a>
-    </div>
-
-    <footer>
-        Built with ❤️ by an Indie Developer | Ready to Rage?
-    </footer>
-
-</div>
-
-<script src="game.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
