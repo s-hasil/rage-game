@@ -16,18 +16,3 @@ https://yourusername.github.io/repository-name
 
 ---
 
-## 💰 Donation
-
-Replace the donation link inside **index.html** with:
-
-BuyMeACoffee / Ko-fi / Stripe Payment Link
-
----
-
-## 🎯 Pro Tip For Virality
-
-Put this in your Instagram bio:
-
-"⚠️ Only 1% survive this game."
-
-Curiosity = clicks 😈
