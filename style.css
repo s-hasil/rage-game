@@ -481,59 +481,111 @@ body.player-authenticated .community-panel .leaderboard-note { display:none; }
 }
 
 
-/* Responsive flight deck: use the available screen, keep the canvas proportional, remove empty side gutters. */
-body.playing { padding: 0 12px 10px; }
-body.playing .app { width:100%; max-width:none; }
+/* Viewport-first game layout: size the portrait canvas from available height, not a small fixed width. */
+html, body { min-height:100%; }
+body.playing {
+  min-height:100svh;
+  height:100svh;
+  overflow:hidden;
+  padding:0 10px 8px;
+}
+body.playing .app {
+  width:100%;
+  max-width:none;
+  height:100%;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+}
+body.playing .topbar,
+body.playing .site-footer,
+body.playing #menuScreen { display:none !important; }
 body.playing .game-section {
-  display:block !important;
-  width:fit-content;
+  display:flex !important;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  width:100%;
   max-width:100%;
-  margin:10px auto 0;
+  min-height:0;
+  margin:0 auto;
+  flex:1 1 auto;
 }
 body.playing .game-heading {
-  width:100%;
-  margin:0 auto 8px;
-  font-size:clamp(7px, .72vw, 9px);
+  width:min(620px,100%);
+  flex:0 0 24px;
+  min-height:24px;
+  margin:0 auto 5px;
+  font-size:clamp(7px,.75vw,9px);
 }
 body.playing .game-shell {
+  flex:0 1 auto;
   width:fit-content;
   max-width:100%;
+  min-height:0;
   margin:0 auto;
   padding:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 body.playing canvas#game {
   display:block;
-  width:min(480px, calc((100dvh - 105px) * .6));
+  width:min(560px, calc((100svh - 78px) * .6), calc(100vw - 32px));
   height:auto;
   max-width:100%;
-  max-height:none;
+  max-height:calc(100svh - 78px);
   aspect-ratio:3 / 5;
   margin:0 auto;
   object-fit:contain;
 }
-body.playing .hud { top:16px; left:16px; right:16px; }
-body.playing .flight-status { top:72px; left:17px; }
+body.playing .game-footer {
+  width:min(620px,100%);
+  flex:0 0 20px;
+  padding:5px 2px 0;
+  font-size:7px;
+}
+body.playing .hud { top:14px; left:14px; right:14px; }
+body.playing .flight-status { top:68px; left:15px; }
 body.playing .gameover-screen { inset:6px; }
 
 @media (max-width:760px) {
-  body.playing { padding:0 8px max(8px, env(safe-area-inset-bottom)); }
-  body.playing .game-section { width:100%; margin:7px auto 0; }
-  body.playing .game-heading { margin-bottom:6px; }
-  body.playing .game-shell { width:fit-content; max-width:100%; padding:5px; }
-  body.playing canvas#game {
-    width:min(calc(100vw - 26px), calc((100dvh - 145px) * .6), 480px);
-    height:auto;
+  body.playing { padding:0 5px max(5px,env(safe-area-inset-bottom)); }
+  body.playing .game-section { margin:0 auto; }
+  body.playing .game-heading {
+    flex-basis:22px;
+    min-height:22px;
+    margin-bottom:3px;
+    padding:0 5px;
+    font-size:6px;
   }
-  body.playing .hud { top:12px; left:12px; right:12px; gap:4px; }
+  body.playing .game-heading-right { font-size:6px; }
+  body.playing .game-shell { padding:4px; }
+  body.playing canvas#game {
+    width:min(480px, calc((100svh - 62px) * .6), calc(100vw - 18px));
+    max-height:calc(100svh - 62px);
+  }
+  body.playing .game-footer {
+    flex-basis:17px;
+    padding-top:4px;
+    font-size:5px;
+  }
+  body.playing .hud { top:10px; left:10px; right:10px; gap:4px; }
   body.playing .hud-card { min-width:0; padding:6px 7px; }
   body.playing .hud-card strong { font-size:clamp(15px,4vw,19px); }
   body.playing .hud-label { font-size:6px; }
-  body.playing .flight-status { top:64px; left:12px; font-size:6px; }
-  body.playing .touch-controls { right:14px; bottom:14px; left:14px; }
-  body.playing .touch-btn { width:58px; height:58px; }
+  body.playing .flight-status { top:59px; left:10px; font-size:6px; }
+  body.playing .touch-controls { right:12px; bottom:12px; left:12px; }
+  body.playing .touch-btn { width:56px; height:56px; }
 }
 @media (max-height:560px) and (orientation:landscape) {
-  body.playing .game-section { margin-top:2px; }
-  body.playing canvas#game { width:min(calc((100dvh - 48px) * .6), 480px); }
-  body.playing .game-heading { margin-bottom:3px; }
+  body.playing { padding:0 6px 4px; }
+  body.playing .game-heading { flex-basis:17px; min-height:17px; margin-bottom:2px; }
+  body.playing canvas#game {
+    width:min(440px, calc((100svh - 45px) * .6), calc(100vw - 20px));
+    max-height:calc(100svh - 45px);
+  }
+  body.playing .game-footer { display:none; }
 }
