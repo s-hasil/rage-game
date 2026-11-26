@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=voidrun-auth-final-3" />
+    <link rel="stylesheet" href="style.css?v=voidrun-profile-1" />
 </head>
 <body>
     <div class="space-noise" aria-hidden="true"></div>
@@ -23,6 +23,14 @@
                 <span>VOID<span class="brand-accent">RUN</span></span>
             </a>
             <div class="topbar-center"><span class="live-dot"></span> ARCADE SURVIVAL <span class="topbar-divider">/</span> ENDLESS MODE</div>
+            <div id="profileMenu" class="profile-menu" hidden>
+                <button id="profileMenuToggle" class="profile-menu-toggle" type="button" aria-label="Open player profile" aria-expanded="false"><img id="headerAvatar" alt="" /><span id="headerAvatarFallback">P</span><span class="profile-chevron">⌄</span></button>
+                <div id="profileDropdown" class="profile-dropdown" hidden>
+                    <button id="openProfileBtn" type="button">♙ <span>PROFILE</span></button>
+                    <button id="dropdownResetBtn" type="button">◇ <span>RESET PASSWORD</span></button>
+                    <button id="dropdownSignOutBtn" type="button" class="danger">↗ <span>SIGN OUT</span></button>
+                </div>
+            </div>
             <button id="soundToggle" class="sound-toggle" aria-label="Toggle sound"><span class="sound-bars"><i></i><i></i><i></i></span><span>SOUND ON</span></button>
         </header>
 
@@ -89,6 +97,29 @@
             </div>
         </section>
 
+
+        <section id="profileScreen" class="profile-screen" hidden aria-label="Player profile">
+            <div class="profile-heading">
+                <button id="profileBackBtn" class="profile-back" type="button" aria-label="Back to leaderboard">←</button>
+                <div><div class="eyebrow"><span class="eyebrow-line"></span> ACCOUNT SETTINGS</div><h2>PLAYER <span>PROFILE.</span></h2><p>Manage your pilot identity and account security.</p></div>
+            </div>
+            <div class="profile-card">
+                <div class="profile-identity">
+                    <div class="avatar-editor"><img id="profileAvatar" alt="Your profile avatar" /><span id="profileAvatarFallback">P</span><label for="avatarUpload" class="avatar-upload" title="Upload profile picture">📷</label><input id="avatarUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden /></div>
+                    <strong id="profileDisplayName">PILOT</strong><span class="pilot-tag">VOIDRUN PILOT</span><small id="profileJoined"></small>
+                </div>
+                <div class="profile-settings">
+                    <form id="profileNameForm" class="profile-setting">
+                        <label for="profileNameInput">PLAYER NAME</label>
+                        <div class="profile-name-row"><input id="profileNameInput" maxlength="18" minlength="3" required /><button type="submit">SAVE NAME</button></div>
+                    </form>
+                    <div class="profile-setting security-setting"><label>ACCOUNT SECURITY</label><button id="profileResetBtn" type="button"><span><b>Reset Password</b><small>Receive a secure password reset email.</small></span><strong>›</strong></button><p id="profileSecurityNote">For Google accounts, manage your password through Google.</p></div>
+                    <button id="profileSignOutBtn" class="profile-signout" type="button">↗ &nbsp; SIGN OUT</button>
+                    <p id="profileMessage" class="profile-message" role="status"></p>
+                </div>
+            </div>
+        </section>
+
         <section class="game-section" aria-label="Game">
             <div class="game-heading"><span><i class="live-dot"></i> LIVE FLIGHT FEED</span><span class="game-heading-right">SECTOR 07 <b>•</b> SURVIVAL PROTOCOL</span></div>
             <div class="game-shell">
@@ -127,6 +158,6 @@
         <footer class="site-footer"><span>VOIDRUN <b>—</b> A LITTLE ARCADE PROJECT</span><span>BUILT TO BE PLAYED, NOT TAKEN SERIOUSLY.</span></footer>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="game.js?v=voidrun-auth-final-3"></script>
+    <script src="game.js?v=voidrun-profile-1"></script>
 </body>
 </html>
