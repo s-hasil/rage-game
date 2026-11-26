@@ -21,7 +21,109 @@ const leftBtn = document.getElementById("leftBtn");
 const rightBtn = document.getElementById("rightBtn");
 
 const STORAGE_KEY = "heroRushHighScore";
+
 let highScore = Number(localStorage.getItem(STORAGE_KEY) || 0);
+
+// Supabase public project credentials. The publishable key is designed for browser use;
+// database access is restricted by the Row Level Security policies in supabase-setup.sql.
+const SUPABASE_URL = "https://blbuaokeevroddznwhnr.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_RoSNIPpv1nG31lQidXn1Og_UTSUYOtf";
+const supabaseClient = window.supabase?.createClient
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+    : null;
+let currentUser = null;
+let authMode = "login";
+
+const authForm = document.getElementById("authForm");
+const authTitle = document.getElementById("authTitle");
+const authUsername = document.getElementById("authUsername");
+const usernameLabel = document.getElementById("usernameLabel");
+const authEmail = document.getElementById("authEmail");
+const authPassword = document.getElementById("authPassword");
+const authSubmit = document.getElementById("authSubmit");
+const authModeToggle = document.getElementById("authModeToggle");
+const logoutBtn = document.getElementById("logoutBtn");
+const authMessage = document.getElementById("authMessage");
+const playerStatus = document.getElementById("playerStatus");
+const leaderboardList = document.getElementById("leaderboardList");
+
+function showAuthMessage(message, isError = false) {
+    authMessage.textContent = message;
+    authMessage.classList.toggle("error", isError);
+}
+function setAuthMode(mode) {
+    authMode = mode;
+    const registering = mode === "register";
+    authTitle.textContent = registering ? "CREATE PILOT ACCOUNT" : "PLAYER LOGIN";
+    usernameLabel.hidden = !registering;
+    authUsername.hidden = !registering;
+    authUsername.required = registering;
+    authSubmit.textContent = registering ? "CREATE ACCOUNT" : "SIGN IN";
+    authModeToggle.textContent = registering ? "ALREADY REGISTERED? SIGN IN" : "NEW PILOT? CREATE ACCOUNT";
+    showAuthMessage(registering ? "Choose a pilot name and create your account." : "Sign in or create an account to save your high scores.");
+}
+function renderAuthState() {
+    const signedIn = Boolean(currentUser);
+    playerStatus.textContent = signedIn ? (currentUser.user_metadata?.username || currentUser.email || "SIGNED IN").toUpperCase() : "GUEST PILOT";
+    authForm.querySelectorAll("label, input, #authSubmit, #authModeToggle").forEach(el => { el.hidden = signedIn; });
+    logoutBtn.hidden = !signedIn;
+    if (signedIn) showAuthMessage("Signed in. Your finished runs will be saved to the global leaderboard.");
+    else setAuthMode(authMode);
+}
+async function loadLeaderboard() {
+    if (!supabaseClient) {
+        leaderboardList.innerHTML = '<li class="leaderboard-empty">Leaderboard service could not load. Refresh the page.</li>';
+        return;
+    }
+    leaderboardList.innerHTML = '<li class="leaderboard-empty">Loading pilot rankings…</li>';
+    const { data, error } = await supabaseClient.from("leaderboard").select("username,best_score").order("best_score", { ascending: false }).limit(10);
+    if (error) {
+        leaderboardList.innerHTML = '<li class="leaderboard-empty">Could not load rankings. Check that the Supabase SQL setup completed.</li>';
+        return;
+    }
+    if (!data?.length) {
+        leaderboardList.innerHTML = '<li class="leaderboard-empty">No scores yet. Be the first pilot on the board.</li>';
+        return;
+    }
+    leaderboardList.innerHTML = "";
+    data.forEach((pilot, index) => {
+        const item = document.createElement("li");
+        item.className = "leaderboard-entry";
+        const name = document.createElement("span");
+        name.className = "leaderboard-name";
+        name.textContent = String(index + 1).padStart(2, "0") + "  " + (pilot.username || "Unknown Pilot");
+        const score = document.createElement("strong");
+        score.textContent = Number(pilot.best_score || 0).toLocaleString();
+        item.append(name, score);
+        leaderboardList.append(item);
+    });
+}
+async function saveRunScore(score) {
+    if (!supabaseClient || !currentUser || score <= 0) return;
+    const { error } = await supabaseClient.from("scores").insert({ user_id: currentUser.id, score: Math.floor(score) });
+    if (error) {
+        showAuthMessage("Your run ended, but the score could not be saved: " + error.message, true);
+        return;
+    }
+    showAuthMessage("Score saved to the global leaderboard.");
+    await loadLeaderboard();
+}
+async function initializeCommunity() {
+    if (!supabaseClient) {
+        showAuthMessage("Account service unavailable. Please refresh the page.", true);
+        return;
+    }
+    const { data } = await supabaseClient.auth.getSession();
+    currentUser = data.session?.user || null;
+    renderAuthState();
+    await loadLeaderboard();
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+        currentUser = session?.user || null;
+        renderAuthState();
+        loadLeaderboard();
+    });
+}
+
 
 const state = {
     running: false,
@@ -225,6 +327,7 @@ function endGame() {
     damageFlash.classList.add("show");
 
     finalScore.textContent = Math.floor(state.score);
+    saveRunScore(Math.floor(state.score));
     if (state.score > highScore) {
         highScore = Math.floor(state.score);
         localStorage.setItem(STORAGE_KEY, String(highScore));
@@ -896,6 +999,47 @@ soundToggle.addEventListener("click", () => {
     soundToggle.querySelector("span:last-child").textContent = input.soundOn ? "SOUND ON" : "SOUND OFF";
     soundToggle.setAttribute("aria-pressed", String(input.soundOn));
 });
+
+
+if (authForm) {
+    authForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!supabaseClient) return showAuthMessage("Account service unavailable. Refresh the page.", true);
+        authSubmit.disabled = true;
+        showAuthMessage(authMode === "register" ? "Creating your pilot account…" : "Signing in…");
+        try {
+            if (authMode === "register") {
+                const username = authUsername.value.trim();
+                if (username.length < 3) throw new Error("Pilot name must be at least 3 characters.");
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: authEmail.value.trim(),
+                    password: authPassword.value,
+                    options: { data: { username } }
+                });
+                if (error) throw error;
+                if (data.session) showAuthMessage("Account created. You're signed in and ready to fly.");
+                else showAuthMessage("Account created! Check your email for the confirmation link, then sign in.");
+            } else {
+                const { error } = await supabaseClient.auth.signInWithPassword({
+                    email: authEmail.value.trim(),
+                    password: authPassword.value
+                });
+                if (error) throw error;
+            }
+        } catch (error) {
+            showAuthMessage(error.message || "Authentication failed. Please try again.", true);
+        } finally {
+            authSubmit.disabled = false;
+        }
+    });
+    authModeToggle.addEventListener("click", () => setAuthMode(authMode === "login" ? "register" : "login"));
+    logoutBtn.addEventListener("click", async () => {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) showAuthMessage(error.message, true);
+    });
+    document.getElementById("refreshLeaderboard").addEventListener("click", loadLeaderboard);
+    initializeCommunity();
+}
 
 // Initial UI setup
 updateScoreDisplays();
