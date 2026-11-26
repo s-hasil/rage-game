@@ -3,61 +3,94 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🔥 Skill Issue: Hero Rush</title>
+    <meta name="theme-color" content="#070b18" />
+    <meta name="description" content="A fast arcade survival game. Pilot your rocket through a storm of falling space debris." />
+    <title>VOIDRUN — Arcade Survival</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="bg-aurora"></div>
-    <div class="bg-grid"></div>
+    <div class="space-noise" aria-hidden="true"></div>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
 
     <main class="app">
-        <header class="topbar glass">
-            <div>
-                <h1>🔥 SKILL ISSUE: HERO RUSH</h1>
-                <p class="subtitle">Dodge chaos. Flex reflexes. Survive the roast.</p>
-            </div>
-            <button id="soundToggle" class="icon-btn" aria-label="Toggle sound">🔊 Sound: ON</button>
+        <header class="topbar">
+            <a class="brand" href="#" aria-label="Voidrun home">
+                <span class="brand-mark"><span></span><span></span><span></span></span>
+                <span>VOID<span class="brand-accent">RUN</span></span>
+            </a>
+            <div class="topbar-center"><span class="live-dot"></span> ARCADE SURVIVAL <span class="topbar-divider">/</span> ENDLESS MODE</div>
+            <button id="soundToggle" class="sound-toggle" aria-label="Toggle sound"><span class="sound-bars"><i></i><i></i><i></i></span><span>SOUND ON</span></button>
         </header>
 
-        <section id="menuScreen" class="panel glass active" aria-live="polite">
-            <h2>Ready to Rage?</h2>
-            <p>Play as a larger-than-life mallu-style action hero and survive falling neon doom.</p>
-            <div class="stats-row">
-                <div class="stat-pill">🏆 Best: <span id="menuBest">0</span></div>
-                <div class="stat-pill">⚡ Tip: Near-miss hazards for combo bonus</div>
+        <section id="menuScreen" class="menu-screen active" aria-live="polite">
+            <div class="menu-copy">
+                <div class="eyebrow"><span class="eyebrow-line"></span> PILOT. DODGE. SURVIVE.</div>
+                <h1>THE VOID<br><span>IS HUNGRY.</span></h1>
+                <p class="intro">One rocket. Endless debris. How long can you stay in orbit?</p>
+                <div class="menu-stats">
+                    <div class="best-stat"><span class="stat-label">PERSONAL BEST</span><strong id="menuBest">0</strong><span class="stat-unit">POINTS</span></div>
+                    <div class="tip-stat"><span class="tip-symbol">✳</span><span><b>FLIGHT TIP</b><small>Skim past hazards to build your combo.</small></span></div>
+                </div>
+                <div class="menu-actions">
+                    <button id="playBtn" class="launch-btn"><span>LAUNCH MISSION</span><span class="launch-arrow">↗</span></button>
+                    <a class="support-link" href="https://buymeacoffee.com/shasil" target="_blank" rel="noopener noreferrer">SUPPORT THE CREATOR <span>↗</span></a>
+                </div>
+                <div class="controls-note"><span class="keycap">A</span><span class="keycap">D</span> OR <span class="keycap">←</span><span class="keycap">→</span><span class="controls-divider"></span> HOLD LEFT / RIGHT ON MOBILE</div>
             </div>
-            <div class="menu-actions">
-                <button id="playBtn" class="primary-btn">▶ Play Now</button>
-                <a class="support-btn" href="https://buymeacoffee.com/shasil" target="_blank" rel="noopener noreferrer">Support the Developer ❤️</a>
+            <div class="hero-art" aria-hidden="true">
+                <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+                <div class="planet"></div>
+                <div class="hero-rocket">
+                    <div class="rocket-flame"></div>
+                    <div class="rocket-fin fin-left"></div><div class="rocket-fin fin-right"></div>
+                    <div class="rocket-body"><div class="rocket-nose"></div><div class="rocket-window"></div><div class="rocket-stripe"></div><div class="rocket-engine"></div></div>
+                </div>
+                <span class="art-label label-top">SECTOR 07 <i></i></span>
+                <span class="art-label label-bottom">FLIGHT PATH // UNKNOWN</span>
+                <span class="art-coordinate">09° 44' N<br>76° 16' E</span>
             </div>
-            <p class="touch-tip">Desktop: A / D or ← / → &nbsp;|&nbsp; Mobile: Hold left/right controls</p>
         </section>
 
-        <section class="game-shell glass">
-            <canvas id="game" width="420" height="700" aria-label="Rage game canvas"></canvas>
-            <div id="hud" class="hud">
-                <div class="hud-card">Score <span id="scoreValue">0</span></div>
-                <div class="hud-card">Best <span id="bestValue">0</span></div>
-                <div class="hud-card">Combo <span id="comboValue">x1.0</span></div>
+        <section class="game-section" aria-label="Game">
+            <div class="game-heading"><span><i class="live-dot"></i> LIVE FLIGHT FEED</span><span class="game-heading-right">SECTOR 07 <b>•</b> SURVIVAL PROTOCOL</span></div>
+            <div class="game-shell">
+                <canvas id="game" width="420" height="700" aria-label="Pilot your rocket and dodge falling space hazards"></canvas>
+                <div id="hud" class="hud">
+                    <div class="hud-card"><span class="hud-label">SCORE</span><strong id="scoreValue">0000</strong></div>
+                    <div class="hud-card hud-best"><span class="hud-label">BEST RUN</span><strong id="bestValue">0000</strong></div>
+                    <div class="hud-card hud-combo"><span class="hud-label">COMBO</span><strong id="comboValue">x1.0</strong></div>
+                </div>
+                <div class="flight-status"><span class="status-dot"></span> AVOID CONTACT</div>
+                <div id="damageFlash" class="damage-flash"></div>
+                <div id="touchControls" class="touch-controls" aria-hidden="true">
+                    <button id="leftBtn" class="touch-btn" aria-label="Move left">‹</button>
+                    <button id="rightBtn" class="touch-btn" aria-label="Move right">›</button>
+                </div>
             </div>
-            <div id="damageFlash" class="damage-flash"></div>
-            <div id="touchControls" class="touch-controls" aria-hidden="true">
-                <button id="leftBtn" class="touch-btn">⬅</button>
-                <button id="rightBtn" class="touch-btn">➡</button>
+            <div class="game-footer"><span>NO CHECKPOINTS. NO SECOND CHANCES.</span><span>MADE FOR THE JOY OF PLAYING <b>✦</b></span></div>
+        </section>
+
+        <section id="gameOverScreen" class="gameover-screen" aria-live="polite">
+            <div class="gameover-mark">×</div>
+            <div class="eyebrow"><span class="eyebrow-line"></span> SIGNAL LOST</div>
+            <h2>MISSION<br><span>OVER.</span></h2>
+            <p class="gameover-sub">Your rocket didn't make it. Ready for another run?</p>
+            <div class="results-row">
+                <div><span>FINAL SCORE</span><strong id="finalScore">0</strong></div>
+                <div><span>PERSONAL BEST</span><strong id="finalBest">0</strong></div>
+            </div>
+            <div class="menu-actions">
+                <button id="restartBtn" class="launch-btn"><span>RELAUNCH</span><span class="launch-arrow">↗</span></button>
+                <button id="menuBtn" class="back-btn">BACK TO BASE</button>
             </div>
         </section>
 
-        <section id="gameOverScreen" class="panel glass" aria-live="polite">
-            <h2>💀 Hero Got Cooked</h2>
-            <p class="gameover-line">Score: <span id="finalScore">0</span></p>
-            <p class="gameover-line">Best: <span id="finalBest">0</span></p>
-            <div class="menu-actions">
-                <button id="restartBtn" class="primary-btn">🔁 Run It Back</button>
-                <button id="menuBtn" class="ghost-btn">🏠 Menu</button>
-            </div>
-        </section>
+        <footer class="site-footer"><span>VOIDRUN <b>—</b> A LITTLE ARCADE PROJECT</span><span>BUILT TO BE PLAYED, NOT TAKEN SERIOUSLY.</span></footer>
     </main>
-
     <script src="game.js"></script>
 </body>
 </html>
