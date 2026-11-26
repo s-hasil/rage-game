@@ -500,22 +500,60 @@ function createFloaters(count) {
     return arr;
 }
 
+function findSafeHazardSpawn(size, speedY) {
+    const spawnY = -70;
+    const targetY = player.y - 20;
+    const arrivalTime = (targetY - spawnY) / speedY;
+    const margin = Math.max(42, size + player.w * 0.55 + 22);
+    const minX = 20 + size;
+    const maxX = canvas.width - 20 - size;
+    const candidates = [];
+    const steps = 18;
+
+    for (let i = 0; i <= steps; i++) {
+        const x = minX + (maxX - minX) * (i / steps);
+        if (Math.abs(x - player.x) > player.maxSpeed * arrivalTime + margin) continue;
+
+        let safe = true;
+        for (const hazard of state.hazards) {
+            const timeToPlayer = (targetY - hazard.y) / Math.max(1, hazard.speedY);
+            if (timeToPlayer < 0 || Math.abs(timeToPlayer - arrivalTime) > 0.48) continue;
+            const predictedX = Math.max(12, Math.min(canvas.width - 12,
+                hazard.x + hazard.driftX * Math.max(0, arrivalTime)));
+            const requiredGap = margin + hazard.size * 0.72;
+            if (Math.abs(x - predictedX) < requiredGap) {
+                safe = false;
+                break;
+            }
+        }
+        if (safe) candidates.push(x);
+    }
+
+    if (!candidates.length) return null;
+    return candidates[(Math.random() * candidates.length) | 0];
+}
+
 function spawnHazard() {
-    const progress = Math.min(1, state.elapsed / 90);
+    const progress = Math.min(1, state.score / 120);
     const type = hazardTypes[(Math.random() * hazardTypes.length) | 0];
     const size = 26 + Math.random() * 24;
+    const speedY = 210 + Math.random() * 110 + progress * 160;
+    const x = findSafeHazardSpawn(size, speedY);
+    if (x === null) return false;
+
     state.hazards.push({
         type,
-        x: 20 + Math.random() * (canvas.width - 40),
+        x,
         y: -70,
         size,
         rotation: Math.random() * Math.PI * 2,
         spin: (Math.random() * 3 + 2) * (Math.random() > 0.5 ? 1 : -1),
-        speedY: 210 + Math.random() * 110 + progress * 220,
-        driftX: (Math.random() - 0.5) * (42 + progress * 32),
+        speedY,
+        driftX: (Math.random() - 0.5) * (42 + progress * 24),
         trail: [],
         nearMissed: false
     });
+    return true;
 }
 
 function updatePlayer(dt) {
@@ -575,17 +613,6 @@ function updateHazards(dt) {
         const dy = h.y - (player.y - 20);
         const dist = Math.hypot(dx, dy);
 
-        const nearRange = hitRadius + h.size * 0.62 + 24;
-        if (!h.nearMissed && dist < nearRange && dist > hitRadius + h.size * 0.58 && input.nearMissCooldown <= 0) {
-            h.nearMissed = true;
-            input.nearMissCooldown = 0.14;
-            state.nearMissStreak++;
-            state.combo = Math.min(5, 1 + state.nearMissStreak * 0.15);
-            state.score += 3 * state.combo;
-            audio.swoosh();
-            addParticles(h.x, h.y, "#6ef9ff", 9, 0.65);
-        }
-
         if (dist < hitRadius + h.size * 0.55 && state.invulnerable <= 0) {
             state.slowMo = 0.3;
             state.shake = 13;
@@ -597,8 +624,6 @@ function updateHazards(dt) {
 
         if (h.y - h.size > canvas.height + 20) {
             state.hazards.splice(i, 1);
-            state.score += 1 * state.combo;
-            if ((Math.floor(state.score) % 7) === 0) audio.ping();
         }
     }
 }
@@ -690,18 +715,20 @@ function drawPowerUps() {
 
 function updateDifficulty(dt) {
     state.elapsed += dt;
+    state.score = Math.floor(state.elapsed);
     state.spawnTimer += dt;
-    const progress = Math.min(1, state.elapsed / 75);
-    state.spawnInterval = 0.95 - progress * 0.58;
-    if (state.spawnTimer > state.spawnInterval) {
-        state.spawnTimer = 0;
-        spawnHazard();
-        if (Math.random() < progress * 0.28) spawnHazard();
+
+    // Difficulty rises with survival score, but spawn pressure has a fair lower limit.
+    const progress = Math.min(1, state.score / 120);
+    state.spawnInterval = 0.95 - progress * 0.40;
+
+    if (state.spawnTimer >= state.spawnInterval) {
+        // If no reachable safe lane exists, wait rather than creating an unavoidable pattern.
+        if (spawnHazard()) state.spawnTimer = 0;
     }
 
-    state.combo = Math.max(1, state.combo - dt * 0.055);
-    if (state.combo <= 1.02) state.nearMissStreak = 0;
-    input.nearMissCooldown = Math.max(0, input.nearMissCooldown - dt);
+    state.combo = 1;
+    state.nearMissStreak = 0;
 }
 
 function drawBackground() {
