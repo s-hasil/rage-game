@@ -113,7 +113,7 @@ const audio = {
     }
 };
 
-const hazardTypes = ["meteor", "blade", "orb", "fireball"];
+const hazardTypes = ["meteor", "blade", "orb", "fireball", "drone"];
 
 // Static skyline silhouettes are generated once to keep the render loop lightweight.
 // Star positions are generated once so the space scene stays smooth and inexpensive.
@@ -572,7 +572,9 @@ function drawHazard(h) {
     ctx.shadowColor = glowColor;
     ctx.shadowBlur = 15;
 
-    if (h.type === "meteor") {
+    if (h.type === "drone") {
+        drawDroneHazard(h.size);
+    } else if (h.type === "meteor") {
         const rock = ctx.createRadialGradient(-h.size * .14, -h.size * .18, 2, 0, 0, h.size * .5);
         rock.addColorStop(0, "#fff0bd");
         rock.addColorStop(.32, "#ffad55");
@@ -591,6 +593,14 @@ function drawHazard(h) {
         ctx.beginPath();
         ctx.arc(-h.size * .1, -h.size * .12, h.size * .09, 0, Math.PI * 2);
         ctx.fill();
+        // Pitted impact craters and a hot fractured edge.
+        ctx.fillStyle = "rgba(65,24,28,.42)";
+        [[-.22,-.08,.09],[.17,.2,.12],[-.04,.28,.055]].forEach(([cx,cy,cr]) => {
+            ctx.beginPath(); ctx.arc(h.size*cx,h.size*cy,h.size*cr,0,Math.PI*2); ctx.fill();
+        });
+        ctx.strokeStyle = "rgba(255,213,151,.42)";
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(0,0,h.size*.43,-2.6,-.55); ctx.stroke();
     } else if (h.type === "blade") {
         const metal = ctx.createLinearGradient(-h.size * .5, -h.size * .5, h.size * .5, h.size * .5);
         metal.addColorStop(0, "#ffffff");
@@ -647,7 +657,62 @@ function drawHazard(h) {
     ctx.restore();
 }
 
+
+function drawDroneHazard(size) {
+    // Compact hostile interceptor: swept wings, armored fuselage and twin engine glow.
+    ctx.save();
+    ctx.scale(size / 38, size / 38);
+    const wing = ctx.createLinearGradient(0, -18, 0, 18);
+    wing.addColorStop(0, "#d8f2ff");
+    wing.addColorStop(.42, "#6689a8");
+    wing.addColorStop(1, "#263c59");
+    ctx.fillStyle = wing;
+    ctx.beginPath();
+    ctx.moveTo(0, -22);
+    ctx.lineTo(35, 12);
+    ctx.lineTo(31, 18);
+    ctx.lineTo(7, 9);
+    ctx.lineTo(0, 16);
+    ctx.lineTo(-7, 9);
+    ctx.lineTo(-31, 18);
+    ctx.lineTo(-35, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(215,245,255,.65)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    const body = ctx.createLinearGradient(-8, 0, 8, 0);
+    body.addColorStop(0, "#334d6a");
+    body.addColorStop(.48, "#e7f6ff");
+    body.addColorStop(1, "#496987");
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(0, -25);
+    ctx.quadraticCurveTo(9, -8, 7, 15);
+    ctx.lineTo(0, 20);
+    ctx.lineTo(-7, 15);
+    ctx.quadraticCurveTo(-9, -8, 0, -25);
+    ctx.fill();
+    ctx.fillStyle = "#6beaff";
+    ctx.shadowColor = "#45dfff";
+    ctx.shadowBlur = 13;
+    ctx.beginPath();
+    ctx.ellipse(0, -5, 4.5, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    for (const side of [-1, 1]) {
+        ctx.fillStyle = "#ff9b63";
+        ctx.shadowColor = "#ff754c";
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(side * 25, 13, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.restore();
+}
+
 function hazardGlowColor(type) {
+    if (type === "drone") return "#70eaff";
     if (type === "meteor") return "#ff9f59";
     if (type === "blade") return "#b7e1ff";
     if (type === "orb") return "#56f3ff";
