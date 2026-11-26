@@ -479,3 +479,21 @@ body.player-authenticated .community-panel .leaderboard-note { display:none; }
 @media(max-width:760px) {
   body.player-authenticated .community-panel .community-grid { grid-template-columns:minmax(0,1fr) !important; }
 }
+
+
+/* Preserve the intended portrait flight viewport; never squash the canvas to fill a wide panel. */
+body.playing .game-section { width:min(620px,100%); margin:14px auto 0; }
+body.playing .game-shell { width:100%; padding:8px; }
+body.playing canvas#game {
+  width:auto;
+  height:min(78vh, 900px);
+  max-width:100%;
+  max-height:none;
+  aspect-ratio:3 / 5;
+  margin:0 auto;
+  object-fit:contain;
+}
+@media (max-width:760px) {
+  body.playing .game-section { width:100%; margin-top:10px; }
+  body.playing canvas#game { height:min(72vh, 760px); }
+}
