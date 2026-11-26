@@ -114,6 +114,18 @@ const audio = {
 
 const hazardTypes = ["meteor", "blade", "orb", "fireball"];
 
+// Static skyline silhouettes are generated once to keep the render loop lightweight.
+const cityBuildings = Array.from({ length: 24 }, (_, i) => {
+    const height = 48 + Math.random() * 116;
+    return {
+        x: i * 19 - 5,
+        w: 13 + Math.random() * 13,
+        h: height,
+        hue: Math.random() > 0.5 ? "cyan" : "violet",
+        windows: Array.from({ length: Math.max(2, Math.floor((height - 14) / 12)) }, () => Math.random() > 0.42)
+    };
+});
+
 function updateScoreDisplays() {
     scoreValue.textContent = Math.floor(state.score);
     bestValue.textContent = highScore;
@@ -326,169 +338,359 @@ function updateDifficulty(dt) {
 }
 
 function drawBackground() {
-    const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    g.addColorStop(0, "rgba(17, 32, 70, 0.85)");
-    g.addColorStop(1, "rgba(8, 8, 22, 0.96)");
-    ctx.fillStyle = g;
+    const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    sky.addColorStop(0, "#101d43");
+    sky.addColorStop(0.48, "#10142d");
+    sky.addColorStop(1, "#050817");
+    ctx.fillStyle = sky;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Distant neon skyline.
+    const horizon = 405;
+    ctx.save();
+    for (const b of cityBuildings) {
+        const top = horizon - b.h;
+        const body = ctx.createLinearGradient(b.x, top, b.x + b.w, horizon);
+        body.addColorStop(0, "#111d3d");
+        body.addColorStop(1, "#080e25");
+        ctx.fillStyle = body;
+        ctx.fillRect(b.x, top, b.w, b.h);
+        ctx.fillStyle = b.hue === "cyan" ? "rgba(66,226,255,.48)" : "rgba(204,93,255,.42)";
+        ctx.fillRect(b.x + 2, top + 8, 1.5, Math.max(8, b.h - 14));
+        for (let row = 0; row < b.windows.length; row++) {
+            if (b.windows[row]) {
+                ctx.globalAlpha = 0.28 + Math.sin(state.elapsed * 2 + row + b.x) * 0.08;
+                ctx.fillStyle = row % 2 ? "#60eaff" : "#ff9ee9";
+                ctx.fillRect(b.x + 4, top + 10 + row * 12, 3, 5);
+            }
+        }
+        ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+
+    // Atmospheric glow at the skyline.
+    const horizonGlow = ctx.createRadialGradient(canvas.width / 2, horizon, 5, canvas.width / 2, horizon, 260);
+    horizonGlow.addColorStop(0, "rgba(35,190,255,.16)");
+    horizonGlow.addColorStop(1, "rgba(35,190,255,0)");
+    ctx.fillStyle = horizonGlow;
+    ctx.fillRect(0, 180, canvas.width, 360);
+
+    // A perspective floor gives the scene a subtle 2.5D arcade feel.
+    const floor = ctx.createLinearGradient(0, horizon, 0, canvas.height);
+    floor.addColorStop(0, "rgba(14,28,58,.18)");
+    floor.addColorStop(1, "rgba(3,7,20,.95)");
+    ctx.fillStyle = floor;
+    ctx.fillRect(0, horizon, canvas.width, canvas.height - horizon);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, horizon, canvas.width, canvas.height - horizon);
+    ctx.clip();
+    ctx.strokeStyle = "rgba(60,205,255,.13)";
+    ctx.lineWidth = 1;
+    const centerX = canvas.width / 2;
+    for (let i = -8; i <= 8; i++) {
+        const bottomX = centerX + i * 58;
+        ctx.beginPath();
+        ctx.moveTo(centerX + i * 3, horizon);
+        ctx.lineTo(bottomX, canvas.height + 10);
+        ctx.stroke();
+    }
+    const offset = (state.elapsed * 95) % 42;
+    for (let y = horizon + 12 + offset; y < canvas.height + 55; y += 42) {
+        const depth = (y - horizon) / (canvas.height - horizon);
+        const yy = horizon + (y - horizon) * (0.55 + depth * 0.45);
+        ctx.globalAlpha = 0.08 + depth * 0.12;
+        ctx.beginPath();
+        ctx.moveTo(0, yy);
+        ctx.lineTo(canvas.width, yy);
+        ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+
+    // Subtle illuminated side rails.
+    ctx.save();
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = "#2bdfff";
+    ctx.strokeStyle = "rgba(50,205,255,.22)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(8, 430);
+    ctx.lineTo(8, canvas.height);
+    ctx.moveTo(canvas.width - 8, 430);
+    ctx.lineTo(canvas.width - 8, canvas.height);
+    ctx.stroke();
+    ctx.restore();
 
     for (const f of state.floaters) {
         ctx.globalAlpha = f.alpha;
-        ctx.fillStyle = "#7af3ff";
+        ctx.fillStyle = "#8beeff";
+        ctx.shadowColor = "#4feaff";
+        ctx.shadowBlur = f.r * 4;
         ctx.beginPath();
         ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
         ctx.fill();
     }
+    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
+
+    // Soft edge vignette adds contrast without an image asset.
+    const vignette = ctx.createRadialGradient(centerX, canvas.height * .48, 120, centerX, canvas.height * .48, 460);
+    vignette.addColorStop(0, "rgba(0,0,0,0)");
+    vignette.addColorStop(1, "rgba(0,0,12,.48)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 function drawHero() {
-    const bob = Math.sin(player.idleT * 6) * 2.8;
+    const moving = Math.min(1, Math.abs(player.vx) / player.maxSpeed);
+    const bob = Math.sin(player.idleT * (player.vx ? 10 : 5)) * (2 + moving * 2);
+    const lean = Math.max(-0.16, Math.min(0.16, player.vx / player.maxSpeed * 0.16));
     const x = player.x;
     const y = player.y + bob;
 
-    // Shadow
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(lean);
+
+    // Ground shadow and coloured contact glow.
+    ctx.fillStyle = "rgba(0,0,0,.5)";
     ctx.beginPath();
-    ctx.ellipse(x, y + 28, 24, 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 31, 26 + moving * 4, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    const aura = ctx.createRadialGradient(0, 26, 2, 0, 26, 39);
+    aura.addColorStop(0, "rgba(38,220,255,.22)");
+    aura.addColorStop(1, "rgba(38,220,255,0)");
+    ctx.fillStyle = aura;
+    ctx.fillRect(-42, -8, 84, 76);
+
+    // Short cape / jacket tail.
+    ctx.fillStyle = "#9b3d9f";
+    ctx.beginPath();
+    ctx.moveTo(-12, 1);
+    ctx.quadraticCurveTo(-31, 15, -19, 34);
+    ctx.quadraticCurveTo(-7, 28, 2, 8);
     ctx.fill();
 
-    // Cape glow
-    ctx.fillStyle = "rgba(255, 95, 180, 0.18)";
-    ctx.beginPath();
-    ctx.moveTo(x - 20, y + 10);
-    ctx.quadraticCurveTo(x - 36, y + 20, x - 14, y + 30);
-    ctx.quadraticCurveTo(x + 14, y + 24, x + 8, y + 6);
+    // Legs and shoes.
+    const step = Math.sin(player.idleT * 13) * moving * 3;
+    const legGrad = ctx.createLinearGradient(0, 24, 0, 48);
+    legGrad.addColorStop(0, "#263b72");
+    legGrad.addColorStop(1, "#0b1536");
+    ctx.fillStyle = legGrad;
+    roundRect(-13, 20 + step, 10, 22, 4);
+    ctx.fill();
+    roundRect(3, 20 - step, 10, 22, 4);
+    ctx.fill();
+    ctx.fillStyle = "#0a1027";
+    roundRect(-15, 38 + step, 14, 7, 3);
+    ctx.fill();
+    roundRect(1, 38 - step, 14, 7, 3);
     ctx.fill();
 
-    // Body (jacket)
-    ctx.fillStyle = "#2fd2ff";
-    roundRect(x - 16, y - 6, 32, 34, 10);
+    // Jacket body with shaded side panels.
+    const jacket = ctx.createLinearGradient(-18, -12, 18, 28);
+    jacket.addColorStop(0, "#8af7ff");
+    jacket.addColorStop(.32, "#2fd8f4");
+    jacket.addColorStop(1, "#0879b9");
+    ctx.shadowColor = "#20dfff";
+    ctx.shadowBlur = 17;
+    ctx.fillStyle = jacket;
+    roundRect(-18, -10, 36, 37, 11);
     ctx.fill();
-
-    // Head
-    ctx.fillStyle = "#f5c9a8";
-    ctx.beginPath();
-    ctx.arc(x, y - 20, 16, 0, Math.PI * 2);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(5,54,104,.45)";
+    roundRect(9, -5, 5, 27, 2);
     ctx.fill();
-
-    // Hair + heroic curl
-    ctx.fillStyle = "#111";
+    ctx.strokeStyle = "rgba(225,255,255,.65)";
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(x, y - 25, 16, Math.PI, 2 * Math.PI);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x + 9, y - 24, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Eyes
-    ctx.fillStyle = "#221";
-    ctx.beginPath();
-    ctx.arc(x - 5, y - 20, 1.8, 0, Math.PI * 2);
-    ctx.arc(x + 5, y - 20, 1.8, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Big comedic moustache
-    ctx.strokeStyle = "#1b1b1b";
-    ctx.lineWidth = 2.6;
-    ctx.beginPath();
-    ctx.moveTo(x - 10, y - 13);
-    ctx.quadraticCurveTo(x - 1, y - 7, x + 2, y - 13);
-    ctx.quadraticCurveTo(x + 10, y - 7, x + 11, y - 13);
+    ctx.moveTo(0, -5);
+    ctx.lineTo(0, 23);
     ctx.stroke();
 
-    // Sunglasses
-    ctx.fillStyle = "rgba(5,10,18,0.85)";
-    roundRect(x - 10, y - 24, 9, 5, 2.3);
-    roundRect(x + 1, y - 24, 9, 5, 2.3);
+    // Neck and face with dimensional skin shading.
+    const skin = ctx.createLinearGradient(-15, -49, 14, -10);
+    skin.addColorStop(0, "#ffe0be");
+    skin.addColorStop(.65, "#f5bd94");
+    skin.addColorStop(1, "#bd795f");
+    ctx.fillStyle = skin;
+    roundRect(-6, -25, 12, 13, 4);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(0, -31, 16, 18, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Legs
-    ctx.fillStyle = "#14244f";
-    roundRect(x - 12, y + 28, 8, 16, 3);
-    roundRect(x + 4, y + 28, 8, 16, 3);
+    // Hair silhouette.
+    ctx.fillStyle = "#10101b";
+    ctx.beginPath();
+    ctx.moveTo(-16, -34);
+    ctx.quadraticCurveTo(-18, -52, -3, -50);
+    ctx.quadraticCurveTo(8, -56, 16, -43);
+    ctx.lineTo(15, -34);
+    ctx.quadraticCurveTo(5, -40, -2, -37);
+    ctx.quadraticCurveTo(-10, -33, -16, -34);
+    ctx.fill();
+    ctx.fillStyle = "#383044";
+    ctx.beginPath();
+    ctx.ellipse(-5, -48, 6, 2, -.3, 0, Math.PI * 2);
     ctx.fill();
 
-    // Neon outline
-    ctx.strokeStyle = "rgba(92,245,255,0.55)";
-    ctx.lineWidth = 1.4;
-    roundRect(x - 18, y - 40, 36, 86, 14);
+    // Brows, eyes and signature moustache.
+    ctx.strokeStyle = "#38251f";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-10, -34); ctx.lineTo(-4, -35);
+    ctx.moveTo(4, -35); ctx.lineTo(10, -34);
     ctx.stroke();
+    ctx.fillStyle = "#171522";
+    ctx.beginPath();
+    ctx.arc(-6, -30, 1.5, 0, Math.PI * 2);
+    ctx.arc(6, -30, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#201820";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-10, -23);
+    ctx.quadraticCurveTo(-5, -18, 0, -22);
+    ctx.quadraticCurveTo(5, -18, 10, -23);
+    ctx.stroke();
+    ctx.lineCap = "butt";
+
+    // Hero shades with bright reflective lenses.
+    ctx.fillStyle = "#090d1c";
+    roundRect(-13, -37, 11, 7, 2);
+    ctx.fill();
+    roundRect(2, -37, 11, 7, 2);
+    ctx.fill();
+    ctx.strokeStyle = "#53efff";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-12, -36); ctx.lineTo(-7, -36);
+    ctx.moveTo(3, -36); ctx.lineTo(8, -36);
+    ctx.stroke();
+    ctx.strokeStyle = "#101827";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-2, -34); ctx.lineTo(2, -34);
+    ctx.stroke();
+
+    // Rim light around the complete character.
+    ctx.shadowColor = "#55efff";
+    ctx.shadowBlur = 12;
+    ctx.strokeStyle = "rgba(111,247,255,.72)";
+    ctx.lineWidth = 1.5;
+    roundRect(-20, -52, 40, 99, 15);
+    ctx.stroke();
+    ctx.restore();
 }
 
 function drawHazard(h) {
+    const glowColor = hazardGlowColor(h.type);
+    // Fading motion trail.
     for (let i = 0; i < h.trail.length; i++) {
         const t = h.trail[i];
-        const alpha = (i + 1) / h.trail.length * 0.2;
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = hazardGlowColor(h.type);
+        const progress = (i + 1) / h.trail.length;
+        ctx.globalAlpha = progress * .16;
+        ctx.fillStyle = glowColor;
         ctx.beginPath();
-        ctx.arc(t.x, t.y, h.size * 0.36, 0, Math.PI * 2);
+        ctx.arc(t.x, t.y, h.size * (.16 + progress * .2), 0, Math.PI * 2);
         ctx.fill();
     }
     ctx.globalAlpha = 1;
+
+    // Soft halo behind each hazard.
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = .24;
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = glowColor;
+    ctx.beginPath();
+    ctx.arc(h.x, h.y, h.size * .48, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
     ctx.save();
     ctx.translate(h.x, h.y);
     ctx.rotate(h.rotation);
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = 15;
 
     if (h.type === "meteor") {
-        ctx.fillStyle = "#ff8a3d";
+        const rock = ctx.createRadialGradient(-h.size * .14, -h.size * .18, 2, 0, 0, h.size * .5);
+        rock.addColorStop(0, "#fff0bd");
+        rock.addColorStop(.32, "#ffad55");
+        rock.addColorStop(1, "#bd3a37");
+        ctx.fillStyle = rock;
         ctx.beginPath();
-        ctx.arc(0, 0, h.size * 0.45, 0, Math.PI * 2);
+        ctx.arc(0, 0, h.size * .46, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "#ffd29e";
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = "rgba(255,235,183,.8)";
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(-h.size * 0.08, -h.size * 0.07, h.size * 0.14, 0, Math.PI * 2);
+        ctx.arc(0, 0, h.size * .34, .3, 2.5);
+        ctx.stroke();
+        ctx.fillStyle = "#fff4cb";
+        ctx.beginPath();
+        ctx.arc(-h.size * .1, -h.size * .12, h.size * .09, 0, Math.PI * 2);
         ctx.fill();
     } else if (h.type === "blade") {
-        ctx.fillStyle = "#d4e8ff";
+        const metal = ctx.createLinearGradient(-h.size * .5, -h.size * .5, h.size * .5, h.size * .5);
+        metal.addColorStop(0, "#ffffff");
+        metal.addColorStop(.45, "#9ddfff");
+        metal.addColorStop(1, "#526bba");
+        ctx.fillStyle = metal;
         for (let i = 0; i < 4; i++) {
             ctx.rotate(Math.PI / 2);
             ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(h.size * 0.55, h.size * 0.1);
-            ctx.lineTo(h.size * 0.2, h.size * 0.16);
+            ctx.moveTo(0, -h.size * .08);
+            ctx.quadraticCurveTo(h.size * .2, -h.size * .24, h.size * .58, -h.size * .08);
+            ctx.lineTo(h.size * .19, h.size * .12);
             ctx.closePath();
             ctx.fill();
         }
-        ctx.fillStyle = "#6ea8ff";
+        ctx.fillStyle = "#d9faff";
         ctx.beginPath();
-        ctx.arc(0, 0, h.size * 0.17, 0, Math.PI * 2);
+        ctx.arc(0, 0, h.size * .16, 0, Math.PI * 2);
         ctx.fill();
+        ctx.strokeStyle = "#3ba9ef";
+        ctx.lineWidth = 2;
+        ctx.stroke();
     } else if (h.type === "orb") {
-        const radial = ctx.createRadialGradient(0, 0, h.size * 0.1, 0, 0, h.size * 0.5);
-        radial.addColorStop(0, "#c9f9ff");
-        radial.addColorStop(1, "#00b8ff");
-        ctx.fillStyle = radial;
+        const orb = ctx.createRadialGradient(-h.size * .14, -h.size * .16, 1, 0, 0, h.size * .52);
+        orb.addColorStop(0, "#ffffff");
+        orb.addColorStop(.24, "#b9ffff");
+        orb.addColorStop(.62, "#38cfff");
+        orb.addColorStop(1, "#1450bd");
+        ctx.fillStyle = orb;
         ctx.beginPath();
-        ctx.arc(0, 0, h.size * 0.48, 0, Math.PI * 2);
+        ctx.arc(0, 0, h.size * .48, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = "rgba(165,245,255,0.95)";
-        ctx.lineWidth = 1.7;
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = "rgba(214,255,255,.9)";
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(0, 0, h.size * 0.38, 0, Math.PI * 1.4);
+        ctx.ellipse(0, 0, h.size * .58, h.size * .22, .6, 0, Math.PI * 2);
         ctx.stroke();
     } else {
-        ctx.fillStyle = "#ff4a39";
+        const fire = ctx.createRadialGradient(-h.size * .08, -h.size * .12, 1, 0, 0, h.size * .48);
+        fire.addColorStop(0, "#fff6b2");
+        fire.addColorStop(.28, "#ffb24d");
+        fire.addColorStop(.7, "#ff4c45");
+        fire.addColorStop(1, "#9c174a");
+        ctx.fillStyle = fire;
         ctx.beginPath();
-        ctx.arc(0, 0, h.size * 0.42, 0, Math.PI * 2);
+        ctx.arc(0, 0, h.size * .44, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "#ffd57c";
+        ctx.fillStyle = "#fff0a0";
         ctx.beginPath();
-        ctx.arc(0, 0, h.size * 0.18, 0, Math.PI * 2);
+        ctx.arc(-h.size * .08, -h.size * .08, h.size * .15, 0, Math.PI * 2);
         ctx.fill();
     }
-
-    ctx.restore();
-
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.22;
-    ctx.fillStyle = hazardGlowColor(h.type);
-    ctx.beginPath();
-    ctx.arc(h.x, h.y, h.size * 0.8, 0, Math.PI * 2);
-    ctx.fill();
     ctx.restore();
 }
 
