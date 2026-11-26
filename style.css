@@ -463,3 +463,19 @@ body.profile-open .app > #profileScreen.profile-screen {
 }
 body.profile-open .app > #profileScreen .profile-card { max-width:920px; margin:0 auto; }
 body.profile-open .app > #profileScreen .profile-heading { max-width:920px; margin:0 auto 28px; }
+
+/* Signed-in players see only the global leaderboard, never an empty login card. */
+body.player-authenticated .community-panel .gate-brand,
+body.player-authenticated .community-panel .auth-card { display:none !important; }
+body.player-authenticated .community-panel .community-grid {
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) !important;
+}
+body.player-authenticated .community-panel .gate-leaderboard {
+  display:block !important; visibility:visible !important; width:100% !important;
+  grid-column:1 / -1;
+}
+body.player-authenticated .community-panel .leaderboard-note { display:none; }
+@media(max-width:760px) {
+  body.player-authenticated .community-panel .community-grid { grid-template-columns:minmax(0,1fr) !important; }
+}
