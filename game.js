@@ -279,6 +279,8 @@ const state = {
     powerUps: [],
     nextPowerUpScore: 30,
     invulnerable: 0,
+    shieldFade: 0,
+    shieldWarningPlayed: false,
     floaters: [],
     lastTime: 0
 };
@@ -457,6 +459,8 @@ function startGame() {
     state.powerUps = [];
     state.nextPowerUpScore = 30;
     state.invulnerable = 0;
+    state.shieldFade = 0;
+    state.shieldWarningPlayed = false;
     state.floaters = createFloaters(34);
 
     player.x = canvas.width / 2;
@@ -596,7 +600,18 @@ function addParticles(x, y, color, count, spread = 1) {
 
 function updateHazards(dt) {
     const hitRadius = player.w * 0.34;
+    const previousShieldTime = state.invulnerable;
     state.invulnerable = Math.max(0, state.invulnerable - dt);
+    state.shieldFade = Math.max(0, state.shieldFade - dt);
+
+    if (previousShieldTime > 2 && state.invulnerable <= 2 && state.invulnerable > 0 && !state.shieldWarningPlayed) {
+        state.shieldWarningPlayed = true;
+        audio.beep({ freq: 740, type: "triangle", dur: 0.16, gain: 0.14, slide: 0.78 });
+    }
+    if (previousShieldTime > 0 && state.invulnerable === 0) {
+        state.shieldFade = 0.6;
+        addParticles(player.x, player.y - 18, "#79fff3", 18, 0.55);
+    }
 
     for (let i = state.hazards.length - 1; i >= 0; i--) {
         const h = state.hazards[i];
@@ -613,7 +628,7 @@ function updateHazards(dt) {
         const dy = h.y - (player.y - 20);
         const dist = Math.hypot(dx, dy);
 
-        if (dist < hitRadius + h.size * 0.55 && state.invulnerable <= 0) {
+        if (dist < hitRadius + h.size * 0.55 && state.invulnerable <= 0 && state.shieldFade <= 0) {
             state.slowMo = 0.3;
             state.shake = 13;
             addParticles(player.x, player.y - 14, "#ff625d", 42, 1.6);
@@ -672,6 +687,8 @@ function updatePowerUps(dt) {
         item.pulse += dt * 4;
         if (Math.hypot(item.x - player.x, item.y - (player.y - 20)) < item.size + player.w * 0.38) {
             state.invulnerable = 5;
+            state.shieldFade = 0;
+            state.shieldWarningPlayed = false;
             addParticles(item.x, item.y, "#76fff2", 30, 1.25);
             audio.ping();
             state.powerUps.splice(i, 1);
@@ -1152,6 +1169,32 @@ function drawParticles() {
     ctx.globalAlpha = 1;
 }
 
+function drawShieldStatus() {
+    if (state.invulnerable <= 0 && state.shieldFade <= 0) return;
+
+    const warning = state.invulnerable > 0 && state.invulnerable <= 2;
+    const remaining = Math.max(0, state.invulnerable);
+    const label = state.shieldFade > 0 ? "SHIELD ENDING" : `SHIELD  ${remaining.toFixed(1)}s`;
+    const barWidth = 112;
+    const barX = canvas.width / 2 - barWidth / 2;
+    const barY = 24;
+
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = "bold 11px sans-serif";
+    ctx.fillStyle = warning ? "#ffc66e" : "#9bfff5";
+    ctx.shadowColor = warning ? "#ffad55" : "#5cfff1";
+    ctx.shadowBlur = 10;
+    ctx.fillText(label, canvas.width / 2, barY);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(255,255,255,.16)";
+    ctx.fillRect(barX, barY + 8, barWidth, 4);
+    ctx.fillStyle = warning ? "#ffbd69" : "#79fff3";
+    const progress = state.shieldFade > 0 ? state.shieldFade / 0.6 : remaining / 5;
+    ctx.fillRect(barX, barY + 8, barWidth * Math.max(0, Math.min(1, progress)), 4);
+    ctx.restore();
+}
+
 function draw() {
     const shakeX = state.shake ? (Math.random() - 0.5) * state.shake : 0;
     const shakeY = state.shake ? (Math.random() - 0.5) * state.shake : 0;
@@ -1163,15 +1206,25 @@ function draw() {
     for (const h of state.hazards) drawHazard(h);
     drawPowerUps();
     drawHero();
-    if (state.invulnerable > 0) {
+    if (state.invulnerable > 0 || state.shieldFade > 0) {
+        const warning = state.invulnerable > 0 && state.invulnerable <= 2;
+        const fadeProgress = state.shieldFade > 0 ? state.shieldFade / 0.6 : 1;
+        const flicker = warning && Math.floor(state.elapsed * 10) % 2 === 0;
         ctx.save();
-        ctx.globalAlpha = .55 + Math.sin(state.elapsed * 12) * .18;
-        ctx.strokeStyle = "#79fff3"; ctx.lineWidth = 3;
-        ctx.shadowColor = "#5cfff1"; ctx.shadowBlur = 24;
+        ctx.globalAlpha = (state.shieldFade > 0 ? fadeProgress : 0.62 + Math.sin(state.elapsed * (warning ? 22 : 12)) * (warning ? 0.28 : 0.14));
+        ctx.strokeStyle = warning ? "#ffc66e" : "#79fff3";
+        ctx.lineWidth = warning ? 4 : 3;
+        ctx.shadowColor = warning ? "#ffad55" : "#5cfff1";
+        ctx.shadowBlur = warning ? 30 : 24;
         ctx.beginPath(); ctx.ellipse(player.x, player.y - 18, 43, 55, 0, 0, Math.PI * 2); ctx.stroke();
+        if (flicker) {
+            ctx.globalAlpha *= 0.35;
+            ctx.beginPath(); ctx.ellipse(player.x, player.y - 18, 48, 60, 0, 0, Math.PI * 2); ctx.stroke();
+        }
         ctx.restore();
     }
     drawParticles();
+    drawShieldStatus();
 
     ctx.restore();
 
