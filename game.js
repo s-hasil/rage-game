@@ -45,6 +45,8 @@ const authModeToggle = document.getElementById("authModeToggle");
 const logoutBtn = document.getElementById("logoutBtn");
 const authMessage = document.getElementById("authMessage");
 const playerStatus = document.getElementById("playerStatus");
+const communityTitle = document.getElementById("communityTitle");
+const communityIntro = document.getElementById("communityIntro");
 const leaderboardList = document.getElementById("leaderboardList");
 
 function showAuthMessage(message, isError = false) {
@@ -65,7 +67,10 @@ function setAuthMode(mode) {
 function renderAuthState() {
     const signedIn = Boolean(currentUser);
     document.body.classList.toggle("authenticated", signedIn);
-    playerStatus.textContent = signedIn ? (currentUser.user_metadata?.username || currentUser.email || "SIGNED IN").toUpperCase() : "GUEST PILOT";
+    playerStatus.hidden = !signedIn;
+    playerStatus.textContent = signedIn ? (currentUser.user_metadata?.username || currentUser.email || "SIGNED IN").toUpperCase() : ""; 
+    communityTitle.innerHTML = signedIn ? 'THE <span>LEADERBOARD.</span>' : 'PILOT <span>ACCESS.</span>';
+    communityIntro.textContent = signedIn ? "Your pilot account is active. Track your best runs and compare scores with the global community." : "Sign in or create your pilot account to unlock VOIDRUN.";
     authForm.querySelectorAll("label, input, #authSubmit, #authModeToggle").forEach(el => { el.hidden = signedIn; });
     logoutBtn.hidden = !signedIn;
     if (signedIn) showAuthMessage("Signed in. Your finished runs will be saved to the global leaderboard.");
@@ -117,11 +122,11 @@ async function initializeCommunity() {
     const { data } = await supabaseClient.auth.getSession();
     currentUser = data.session?.user || null;
     renderAuthState();
-    await loadLeaderboard();
+    if (currentUser) await loadLeaderboard();
     supabaseClient.auth.onAuthStateChange((_event, session) => {
         currentUser = session?.user || null;
         renderAuthState();
-        loadLeaderboard();
+        if (currentUser) loadLeaderboard();
     });
 }
 
