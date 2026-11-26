@@ -479,3 +479,24 @@ body.player-authenticated .community-panel .leaderboard-note { display:none; }
 @media(max-width:760px) {
   body.player-authenticated .community-panel .community-grid { grid-template-columns:minmax(0,1fr) !important; }
 }
+
+
+/* TRUE WEBGL FLIGHT DECK */
+.game-section.active { width: min(1120px, 100%); margin: 20px auto 0; }
+.game-shell { width: min(100%, 1060px); margin: 0 auto; overflow: hidden; }
+.game-shell canvas#game { display:block; width:100%; height:auto; aspect-ratio:420/700; opacity:1; }
+.three-game-layer { position:absolute; z-index:1; inset:8px; overflow:hidden; border-radius:5px; pointer-events:none; }
+.three-game-layer canvas { display:block; width:100% !important; height:100% !important; }
+.game-shell.has-3d-renderer canvas#game { opacity:0; }
+.game-shell.has-3d-renderer { background:#050b19; }
+.game-shell.has-3d-renderer .three-game-layer { box-shadow:inset 0 0 70px rgba(27,173,230,.14); }
+.game-shell.has-3d-renderer::before { z-index:2; pointer-events:none; }
+.game-shell.has-3d-renderer::after { z-index:2; pointer-events:none; }
+@media (min-width:900px) {
+  body.playing .game-section { width:min(1120px, calc(100vw - 64px)); margin:16px auto 0; }
+  body.playing .game-shell { width:min(100%, 1060px); }
+}
+@media (max-width:760px) {
+  .game-section.active { width:100%; }
+  .three-game-layer { inset:6px; }
+}
