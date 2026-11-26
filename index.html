@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=voidrun-community-1" />
+    <link rel="stylesheet" href="style.css?v=voidrun-auth-gate-1" />
 </head>
 <body>
     <div class="space-noise" aria-hidden="true"></div>
@@ -55,9 +55,10 @@
             </div>
         </section>
 
-        <section id="communityPanel" class="community-panel" aria-label="Player account and global leaderboard">
+        <section id="communityPanel" class="community-panel auth-gate" aria-label="Player account and global leaderboard">
+            <div class="gate-brand"><span class="brand-mark"><span></span><span></span><span></span></span><span>VOID<span class="brand-accent">RUN</span></span></div>
             <div class="community-top">
-                <div><div class="eyebrow"><span class="eyebrow-line"></span> PILOT NETWORK</div><h2>THE <span>LEADERBOARD.</span></h2><p class="community-intro">Sign in to save your runs and compete with pilots around the world.</p></div>
+                <div><div class="eyebrow"><span class="eyebrow-line"></span> PILOT NETWORK</div><h2>THE <span>LEADERBOARD.</span></h2><p class="community-intro">Authenticate to enter the flight deck and compete with pilots around the world.</p></div>
                 <div id="playerStatus" class="player-status">GUEST PILOT</div>
             </div>
             <div class="community-grid">
@@ -74,7 +75,7 @@
                     <button id="logoutBtn" class="auth-switch logout-btn" type="button" hidden>SIGN OUT</button>
                     <p id="authMessage" class="auth-message" role="status">Sign in or create an account to save your high scores.</p>
                 </form>
-                <div class="leaderboard-card">
+                <div class="leaderboard-card gate-leaderboard">
                     <div class="leaderboard-heading"><div><span class="stat-label">GLOBAL RANKINGS</span><h3>TOP PILOTS</h3></div><button id="refreshLeaderboard" class="refresh-btn" type="button" aria-label="Refresh leaderboard">↻</button></div>
                     <div class="leaderboard-columns"><span>RANK / PILOT</span><span>BEST SCORE</span></div>
                     <ol id="leaderboardList" class="leaderboard-list"><li class="leaderboard-empty">Loading leaderboard…</li></ol>
@@ -121,6 +122,6 @@
         <footer class="site-footer"><span>VOIDRUN <b>—</b> A LITTLE ARCADE PROJECT</span><span>BUILT TO BE PLAYED, NOT TAKEN SERIOUSLY.</span></footer>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="game.js?v=voidrun-community-1"></script>
+    <script src="game.js?v=voidrun-auth-gate-1"></script>
 </body>
 </html>
