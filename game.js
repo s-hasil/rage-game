@@ -64,52 +64,106 @@ const player = {
 const audio = {
     ctx: null,
     master: null,
+    ambience: null,
+    ambienceNodes: [],
     init() {
         if (this.ctx) return;
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        this.ctx = new AudioContextClass();
         this.master = this.ctx.createGain();
-        this.master.gain.value = 0.26;
+        this.master.gain.value = input.soundOn ? 0.34 : 0;
         this.master.connect(this.ctx.destination);
     },
+    resume() {
+        this.init();
+        if (this.ctx && this.ctx.state === "suspended") this.ctx.resume();
+    },
     beep({ freq = 440, type = "sine", dur = 0.1, gain = 0.18, slide = 1, delay = 0, q = 8 }) {
-        if (!input.soundOn || !this.ctx) return;
+        if (!input.soundOn || !this.ctx || !this.master) return;
         const t = this.ctx.currentTime + delay;
         const osc = this.ctx.createOscillator();
         const g = this.ctx.createGain();
         const filter = this.ctx.createBiquadFilter();
-
         filter.type = "lowpass";
-        filter.frequency.value = 2200;
+        filter.frequency.value = 2400;
         filter.Q.value = q;
-
         osc.type = type;
         osc.frequency.setValueAtTime(freq, t);
-        osc.frequency.exponentialRampToValueAtTime(Math.max(80, freq * slide), t + dur);
-
+        osc.frequency.exponentialRampToValueAtTime(Math.max(55, freq * slide), t + dur);
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(gain, t + 0.012);
+        g.gain.exponentialRampToValueAtTime(gain, t + 0.018);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-
-        osc.connect(filter);
-        filter.connect(g);
-        g.connect(this.master);
-
-        osc.start(t);
-        osc.stop(t + dur + 0.02);
+        osc.connect(filter); filter.connect(g); g.connect(this.master);
+        osc.start(t); osc.stop(t + dur + 0.03);
+    },
+    startAmbience() {
+        this.resume();
+        if (!this.ctx || this.ambience || !input.soundOn) return;
+        const now = this.ctx.currentTime;
+        const bus = this.ctx.createGain();
+        bus.gain.value = 0.0001;
+        bus.connect(this.master);
+        bus.gain.setTargetAtTime(0.16, now, 1.8);
+        this.ambience = bus;
+        // Original synthesized deep-space score: warm drones and slow, distant pulses.
+        [55, 82.41, 110, 164.81].forEach((hz, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const filter = this.ctx.createBiquadFilter();
+            osc.type = i === 1 ? "triangle" : "sine";
+            osc.frequency.value = hz;
+            osc.detune.value = i % 2 ? -7 : 5;
+            filter.type = "lowpass";
+            filter.frequency.value = 260 + i * 90;
+            gain.gain.value = [0.24, 0.11, 0.075, 0.035][i];
+            osc.connect(filter); filter.connect(gain); gain.connect(bus);
+            osc.start();
+            this.ambienceNodes.push(osc, filter, gain);
+        });
+        const lfo = this.ctx.createOscillator();
+        const lfoGain = this.ctx.createGain();
+        lfo.type = "sine"; lfo.frequency.value = 0.075; lfoGain.gain.value = 0.035;
+        lfo.connect(lfoGain); lfoGain.connect(bus.gain); lfo.start();
+        this.ambienceNodes.push(lfo, lfoGain);
+        // Sparse, gentle high notes give the soundtrack a drifting sci-fi feel.
+        this.ambientNoteTimer = this.ctx.currentTime;
+    },
+    stopAmbience() {
+        if (!this.ctx || !this.ambience) return;
+        const bus = this.ambience;
+        bus.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.35);
+        const nodes = this.ambienceNodes.slice();
+        this.ambienceNodes = [];
+        this.ambience = null;
+        window.setTimeout(() => nodes.forEach(node => {
+            try { if (node.stop) node.stop(); node.disconnect(); } catch (_) {}
+        }), 1800);
+    },
+    setEnabled(enabled) {
+        input.soundOn = enabled;
+        this.resume();
+        if (!this.ctx || !this.master) return;
+        this.master.gain.setTargetAtTime(enabled ? 0.34 : 0, this.ctx.currentTime, 0.06);
+        if (enabled && state.running) this.startAmbience();
+        else this.stopAmbience();
     },
     hit() {
-        this.beep({ freq: 180, type: "sawtooth", dur: 0.16, gain: 0.22, slide: 0.55 });
-        this.beep({ freq: 110, type: "triangle", dur: 0.24, gain: 0.18, slide: 0.7, delay: 0.04 });
+        this.beep({ freq: 210, type: "sawtooth", dur: 0.24, gain: 0.32, slide: 0.34, q: 3 });
+        this.beep({ freq: 92, type: "triangle", dur: 0.42, gain: 0.3, slide: 0.52, delay: 0.025 });
+        this.beep({ freq: 720, type: "square", dur: 0.055, gain: 0.09, slide: 0.28, delay: 0.015 });
     },
     gameOver() {
-        this.beep({ freq: 320, type: "square", dur: 0.18, gain: 0.16, slide: 0.7 });
-        this.beep({ freq: 190, type: "sawtooth", dur: 0.28, gain: 0.16, slide: 0.45, delay: 0.09 });
+        this.stopAmbience();
+        this.beep({ freq: 440, type: "sawtooth", dur: 0.38, gain: 0.22, slide: 0.48 });
+        this.beep({ freq: 220, type: "triangle", dur: 0.75, gain: 0.25, slide: 0.42, delay: 0.12 });
+        this.beep({ freq: 110, type: "sine", dur: 0.95, gain: 0.2, slide: 0.62, delay: 0.22 });
     },
     ping() {
-        this.beep({ freq: 860, type: "triangle", dur: 0.09, gain: 0.13, slide: 1.15 });
+        this.beep({ freq: 880, type: "triangle", dur: 0.11, gain: 0.12, slide: 1.18 });
     },
     swoosh() {
-        this.beep({ freq: 620, type: "sine", dur: 0.06, gain: 0.1, slide: 1.5 });
+        this.beep({ freq: 620, type: "sine", dur: 0.12, gain: 0.12, slide: 1.65 });
     }
 };
 
@@ -136,8 +190,8 @@ function setScreen(mode) {
 
 function startGame() {
     input.interacted = true;
-    audio.init();
-    if (audio.ctx.state === "suspended") audio.ctx.resume();
+    audio.resume();
+    audio.startAmbience();
 
     state.running = true;
     state.gameOver = false;
@@ -802,8 +856,7 @@ function bindTouchButton(btn, direction) {
     const down = (ev) => {
         ev.preventDefault();
         input.interacted = true;
-        audio.init();
-        if (audio.ctx.state === "suspended") audio.ctx.resume();
+        audio.resume();
         setInput(true, direction);
     };
     const up = (ev) => {
@@ -833,10 +886,9 @@ menuBtn.addEventListener("click", () => {
 
 soundToggle.addEventListener("click", () => {
     input.interacted = true;
-    audio.init();
-    if (audio.ctx.state === "suspended") audio.ctx.resume();
-    input.soundOn = !input.soundOn;
+    audio.setEnabled(!input.soundOn);
     soundToggle.querySelector("span:last-child").textContent = input.soundOn ? "SOUND ON" : "SOUND OFF";
+    soundToggle.setAttribute("aria-pressed", String(input.soundOn));
 });
 
 // Initial UI setup
