@@ -29,7 +29,14 @@ let highScore = Number(localStorage.getItem(STORAGE_KEY) || 0);
 const SUPABASE_URL = "https://blbuaokeevroddznwhnr.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_RoSNIPpv1nG31lQidXn1Og_UTSUYOtf";
 const supabaseClient = window.supabase?.createClient
-    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: {
+            flowType: "pkce",
+            detectSessionInUrl: true,
+            persistSession: true,
+            autoRefreshToken: true
+        }
+    })
     : null;
 let currentUser = null;
 let authMode = "login";
@@ -117,18 +124,28 @@ async function saveRunScore(score) {
 }
 async function initializeCommunity() {
     if (!supabaseClient) {
-        showAuthMessage("Account service unavailable. Please refresh the page.", true);
+        showAuthMessage("Account service unavailable. Check your connection and refresh.", true);
+        googleAuthBtn.disabled = true;
+        authSubmit.disabled = true;
         return;
     }
-    const { data } = await supabaseClient.auth.getSession();
-    currentUser = data.session?.user || null;
-    renderAuthState();
-    if (currentUser) await loadLeaderboard();
+
+    // Subscribe before reading the stored session so OAuth callbacks and refreshes
+    // cannot be missed during initialization. Keep async work outside the auth lock.
     supabaseClient.auth.onAuthStateChange((_event, session) => {
         currentUser = session?.user || null;
         renderAuthState();
-        if (currentUser) loadLeaderboard();
+        if (currentUser) window.setTimeout(() => loadLeaderboard(), 0);
     });
+
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) {
+        showAuthMessage("Could not restore your sign-in session: " + error.message, true);
+        return;
+    }
+    currentUser = data.session?.user || currentUser;
+    renderAuthState();
+    if (currentUser) await loadLeaderboard();
 }
 
 
@@ -1051,21 +1068,24 @@ if (authForm) {
         }
     });
     googleAuthBtn.addEventListener("click", async () => {
-        if (!supabaseClient) return showAuthMessage("Account service unavailable. Refresh the page.", true);
+        if (!supabaseClient) return showAuthMessage("Account service unavailable. Check your connection and refresh.", true);
         googleAuthBtn.disabled = true;
         showAuthMessage("Connecting securely to Google…");
         try {
             const { error } = await supabaseClient.auth.signInWithOAuth({
                 provider: "google",
                 options: {
-                    redirectTo: window.location.origin + window.location.pathname,
+                    redirectTo: "https://s-hasil.github.io/rage-game/",
                     queryParams: { access_type: "offline", prompt: "select_account" }
                 }
             });
             if (error) throw error;
         } catch (error) {
             googleAuthBtn.disabled = false;
-            showAuthMessage(error.message || "Google sign-in could not start.", true);
+            const message = error.message || "Google sign-in could not start.";
+            showAuthMessage(/provider.*not enabled|unsupported provider/i.test(message)
+                ? "Google sign-in is not enabled yet. Enable the Google provider and add its OAuth Client ID and Secret in Supabase Authentication settings."
+                : message, true);
         }
     });
     authModeToggle.addEventListener("click", () => setAuthMode(authMode === "login" ? "register" : "login"));
