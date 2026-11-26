@@ -41,6 +41,7 @@ const usernameLabel = document.getElementById("usernameLabel");
 const authEmail = document.getElementById("authEmail");
 const authPassword = document.getElementById("authPassword");
 const authSubmit = document.getElementById("authSubmit");
+const googleAuthBtn = document.getElementById("googleAuthBtn");
 const authModeToggle = document.getElementById("authModeToggle");
 const logoutBtn = document.getElementById("logoutBtn");
 const authMessage = document.getElementById("authMessage");
@@ -71,7 +72,7 @@ function renderAuthState() {
     playerStatus.textContent = signedIn ? (currentUser.user_metadata?.username || currentUser.email || "SIGNED IN").toUpperCase() : ""; 
     communityTitle.innerHTML = signedIn ? 'THE <span>LEADERBOARD.</span>' : 'PILOT <span>ACCESS.</span>';
     communityIntro.textContent = signedIn ? "Your pilot account is active. Track your best runs and compare scores with the global community." : "Sign in or create your pilot account to unlock VOIDRUN.";
-    authForm.querySelectorAll("label, input, #authSubmit, #authModeToggle").forEach(el => { el.hidden = signedIn; });
+    authForm.querySelectorAll("label, input, #authSubmit, #authModeToggle, #googleAuthBtn, .auth-divider").forEach(el => { el.hidden = signedIn; });
     logoutBtn.hidden = !signedIn;
     if (signedIn) showAuthMessage("Signed in. Your finished runs will be saved to the global leaderboard.");
     else setAuthMode(authMode);
@@ -1038,9 +1039,30 @@ if (authForm) {
                 if (error) throw error;
             }
         } catch (error) {
-            showAuthMessage(error.message || "Authentication failed. Please try again.", true);
+            const message = error.message || "Authentication failed. Please try again.";
+            showAuthMessage(/security purposes|after \d+ seconds|rate limit/i.test(message)
+                ? "Email sign-up is temporarily rate-limited by Supabase. Wait for the timer to finish, or use Continue with Google once Google OAuth is enabled."
+                : message, true);
         } finally {
             authSubmit.disabled = false;
+        }
+    });
+    googleAuthBtn.addEventListener("click", async () => {
+        if (!supabaseClient) return showAuthMessage("Account service unavailable. Refresh the page.", true);
+        googleAuthBtn.disabled = true;
+        showAuthMessage("Connecting securely to Google…");
+        try {
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: "google",
+                options: {
+                    redirectTo: window.location.origin + window.location.pathname,
+                    queryParams: { access_type: "offline", prompt: "select_account" }
+                }
+            });
+            if (error) throw error;
+        } catch (error) {
+            googleAuthBtn.disabled = false;
+            showAuthMessage(error.message || "Google sign-in could not start.", true);
         }
     });
     authModeToggle.addEventListener("click", () => setAuthMode(authMode === "login" ? "register" : "login"));
