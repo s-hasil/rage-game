@@ -51,7 +51,10 @@ body::before {
 .sound-bars i { display: block; width: 2px; height: 7px; background: var(--cyan); border-radius: 2px; }
 .sound-bars i:nth-child(2) { height: 12px; }
 .sound-bars i:nth-child(3) { height: 5px; }
-.menu-screen { min-height: 440px; display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 20px; padding: 46px 5.2% 38px; overflow: hidden; border-bottom: 1px solid var(--line); }
+.menu-screen { display: none; min-height: 440px; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 20px; padding: 46px 5.2% 38px; overflow: hidden; border-bottom: 1px solid var(--line); }
+.menu-screen.active { display: grid; }
+/* Keep the menu out of the way once a run starts. */
+.menu-screen { grid-template-columns: 1.05fr .95fr; align-items: center; gap: 20px; padding: 46px 5.2% 38px; overflow: hidden; border-bottom: 1px solid var(--line); }
 .menu-copy { position: relative; z-index: 2; }
 .eyebrow { display: flex; align-items: center; gap: 10px; color: var(--cyan); font-size: 9px; font-weight: 500; }
 .eyebrow-line { width: 25px; height: 1px; background: var(--cyan); box-shadow: 0 0 9px var(--cyan); }
