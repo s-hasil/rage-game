@@ -781,6 +781,18 @@ function drawBackground() {
     ctx.beginPath();
     ctx.arc(0, 0, 48, 0, Math.PI * 2);
     ctx.fill();
+    // Atmospheric rim, surface bands and a soft terminator for spherical depth.
+    ctx.save();
+    ctx.beginPath(); ctx.arc(0, 0, 47, 0, Math.PI * 2); ctx.clip();
+    ctx.fillStyle = "rgba(112,190,218,.12)";
+    ctx.beginPath(); ctx.ellipse(-8, -13, 45, 9, -.18, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(7, 13, 43, 6, -.12, 0, Math.PI * 2); ctx.fill();
+    const shade = ctx.createLinearGradient(-34, -8, 48, 10);
+    shade.addColorStop(0, "rgba(0,4,18,.02)");
+    shade.addColorStop(.58, "rgba(0,4,18,.12)");
+    shade.addColorStop(1, "rgba(0,3,15,.82)");
+    ctx.fillStyle = shade; ctx.fillRect(-50, -50, 100, 100);
+    ctx.restore();
     ctx.strokeStyle = "rgba(135,206,228,.24)";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -841,6 +853,19 @@ function drawHero() {
     ctx.save();
     ctx.translate(x, y - 7);
     ctx.rotate(lean);
+
+    // Soft cast shadow and under-hull bounce light create a raised 3D silhouette.
+    ctx.save();
+    ctx.globalAlpha = .42;
+    ctx.fillStyle = "#000713";
+    ctx.filter = "blur(7px)";
+    ctx.beginPath(); ctx.ellipse(3, 24, 25, 47, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.filter = "none";
+    const bounce = ctx.createRadialGradient(0, 25, 2, 0, 25, 36);
+    bounce.addColorStop(0, "rgba(76,218,255,.22)");
+    bounce.addColorStop(1, "rgba(76,218,255,0)");
+    ctx.fillStyle = bounce; ctx.fillRect(-38, -5, 76, 72);
+    ctx.restore();
 
     // Blue engine aura and exhaust plume.
     const aura = ctx.createRadialGradient(0, 34, 2, 0, 34, 48);
@@ -907,6 +932,24 @@ function drawHero() {
     ctx.closePath();
     ctx.fill();
     ctx.shadowBlur = 0;
+
+    // Raised armor plates, bevel highlights and dark side bevels.
+    const bevel = ctx.createLinearGradient(-18, -10, 18, 5);
+    bevel.addColorStop(0, "rgba(255,255,255,.58)");
+    bevel.addColorStop(.32, "rgba(255,255,255,.08)");
+    bevel.addColorStop(.72, "rgba(28,55,78,.08)");
+    bevel.addColorStop(1, "rgba(5,18,34,.62)");
+    ctx.fillStyle = bevel;
+    ctx.beginPath();
+    ctx.moveTo(0, -49); ctx.bezierCurveTo(9, -35, 15, -14, 14, 18);
+    ctx.lineTo(9, 31); ctx.lineTo(-9, 31); ctx.lineTo(-14, 18);
+    ctx.bezierCurveTo(-15, -14, -9, -35, 0, -49);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.26)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, -43); ctx.lineTo(0, 27); ctx.stroke();
+    ctx.fillStyle = "rgba(28,57,78,.42)";
+    ctx.beginPath(); ctx.moveTo(14, -5); ctx.lineTo(17, 17); ctx.lineTo(12, 29); ctx.lineTo(10, 2); ctx.closePath(); ctx.fill();
 
     // Nose highlight and hull panels.
     ctx.strokeStyle = "rgba(255,255,255,.75)";
@@ -997,9 +1040,35 @@ function drawHazard(h) {
         rock.addColorStop(.32, "#ffad55");
         rock.addColorStop(1, "#bd3a37");
         ctx.fillStyle = rock;
+        // Irregular faceted silhouette with a dark lower bevel for a 3D asteroid.
         ctx.beginPath();
-        ctx.arc(0, 0, h.size * .46, 0, Math.PI * 2);
-        ctx.fill();
+        const facets = 10;
+        for (let i = 0; i < facets; i++) {
+            const angle = (i / facets) * Math.PI * 2;
+            const radius = h.size * (.39 + (i % 3) * .035);
+            const px = Math.cos(angle) * radius;
+            const py = Math.sin(angle) * radius;
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath(); ctx.fill();
+        ctx.save();
+        ctx.clip();
+        const underside = ctx.createLinearGradient(-h.size * .2, -h.size * .3, h.size * .25, h.size * .5);
+        underside.addColorStop(0, "rgba(255,255,255,.28)");
+        underside.addColorStop(.42, "rgba(255,255,255,0)");
+        underside.addColorStop(1, "rgba(35,9,22,.68)");
+        ctx.fillStyle = underside; ctx.fillRect(-h.size, -h.size, h.size * 2, h.size * 2);
+        ctx.strokeStyle = "rgba(255,224,180,.22)";
+        ctx.lineWidth = 1;
+        for (let facet = 0; facet < 6; facet++) {
+            const angle = facet * Math.PI / 3;
+            ctx.beginPath(); ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(angle) * h.size * .48, Math.sin(angle) * h.size * .48); ctx.stroke();
+        }
+        ctx.restore();
+        ctx.strokeStyle = "rgba(255,230,190,.52)";
+        ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(0, 0, h.size * .42, -2.7, -.55); ctx.stroke();
         ctx.shadowBlur = 0;
         ctx.strokeStyle = "rgba(255,235,183,.8)";
         ctx.lineWidth = 2;
@@ -1079,13 +1148,26 @@ function drawHazard(h) {
 function drawBrokenRocket(size) {
     ctx.save();
     ctx.scale(size / 38, size / 38);
-    ctx.fillStyle = "#263c59";
+    // Floating contact shadow and metallic hull with layered bevels.
+    ctx.fillStyle = "rgba(0,5,16,.45)";
+    ctx.beginPath(); ctx.ellipse(3, 8, 25, 30, -.2, 0, Math.PI * 2); ctx.fill();
+    const hull3d = ctx.createLinearGradient(-18, -22, 18, 16);
+    hull3d.addColorStop(0, "#d2e8f4");
+    hull3d.addColorStop(.18, "#557d9e");
+    hull3d.addColorStop(.55, "#263c59");
+    hull3d.addColorStop(1, "#101c32");
+    ctx.fillStyle = hull3d;
     ctx.strokeStyle = "#b9eaff";
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(-11, -25); ctx.lineTo(9, -18); ctx.lineTo(14, 5);
     ctx.lineTo(5, 22); ctx.lineTo(-12, 14); ctx.lineTo(-17, -4); ctx.closePath();
     ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,.38)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-8, -20); ctx.lineTo(5, -14); ctx.lineTo(9, 2); ctx.stroke();
+    ctx.fillStyle = "rgba(5,15,29,.65)";
+    ctx.beginPath(); ctx.moveTo(3, -13); ctx.lineTo(10, -8); ctx.lineTo(12, 5); ctx.lineTo(4, 13); ctx.closePath(); ctx.fill();
     ctx.fillStyle = "#f28b55";
     ctx.beginPath(); ctx.moveTo(-12, 10); ctx.lineTo(-27, 24); ctx.lineTo(-5, 19); ctx.fill();
     ctx.beginPath(); ctx.moveTo(9, -8); ctx.lineTo(27, -20); ctx.lineTo(15, 1); ctx.fill();
