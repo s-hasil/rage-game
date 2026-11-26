@@ -1480,12 +1480,12 @@ function resizeThreeRenderer() {
     const width = canvas.clientWidth || 420;
     const height = canvas.clientHeight || 700;
     threeRenderer.setSize(width, height, false);
-    const aspect = width / height;
-    const viewHeight = threeWorld.height;
-    threeCamera.left = -viewHeight * aspect / 2;
-    threeCamera.right = viewHeight * aspect / 2;
-    threeCamera.top = viewHeight / 2;
-    threeCamera.bottom = -viewHeight / 2;
+    // Keep the same 420x700 logical camera as the original canvas.
+    // The renderer canvas stretches with the game panel, matching its existing responsive layout.
+    threeCamera.left = -threeWorld.width / 2;
+    threeCamera.right = threeWorld.width / 2;
+    threeCamera.top = threeWorld.height / 2;
+    threeCamera.bottom = -threeWorld.height / 2;
     threeCamera.updateProjectionMatrix();
 }
 function syncThreeObjects(collection, source, factory) {
