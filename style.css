@@ -356,9 +356,12 @@ body:not(.authenticated) #communityPanel .community-top,
 body:not(.authenticated) #communityPanel .community-grid { width:min(940px,100%); margin-left:auto; margin-right:auto; }
 body:not(.authenticated) #communityPanel .community-top { align-items:flex-start; }
 body:not(.authenticated) #communityPanel .community-top h2 { font-size:clamp(38px,5vw,58px); }
-body:not(.authenticated) #communityPanel .community-grid { grid-template-columns:minmax(280px,.85fr) minmax(300px,1.15fr); }
+body:not(.authenticated) #communityPanel .community-grid { display:flex; justify-content:center; }
+body:not(.authenticated) #communityPanel .auth-card { width:min(440px,100%); }
+body:not(.authenticated) #communityPanel .gate-leaderboard { display:none !important; }
+body:not(.authenticated) #communityPanel .community-top { width:min(440px,100%); margin-bottom:20px; }
+body:not(.authenticated) #communityPanel .community-top h2 { font-size:clamp(42px,6vw,64px); }
 body:not(.authenticated) #communityPanel .auth-card { box-shadow:0 22px 70px rgba(0,0,0,.32); }
-body:not(.authenticated) #communityPanel .gate-leaderboard { opacity:.9; }
 body.authenticated #communityPanel.auth-gate { position:static; min-height:0; padding:30px 5.2% 42px; }
 body.authenticated .gate-brand { display:none; }
 body.authenticated #communityPanel .community-top,
