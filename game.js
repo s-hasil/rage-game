@@ -77,7 +77,9 @@ const audio = {
     },
     resume() {
         this.init();
-        if (this.ctx && this.ctx.state === "suspended") this.ctx.resume();
+        if (!this.ctx) return Promise.resolve();
+        if (this.ctx.state === "suspended") return this.ctx.resume();
+        return Promise.resolve();
     },
     beep({ freq = 440, type = "sine", dur = 0.1, gain = 0.18, slide = 1, delay = 0, q = 8 }) {
         if (!input.soundOn || !this.ctx || !this.master) return;
@@ -98,7 +100,8 @@ const audio = {
         osc.start(t); osc.stop(t + dur + 0.03);
     },
     startAmbience() {
-        this.resume();
+        if (!input.soundOn || this.ambience) return;
+        this.resume().then(() => {
         if (!this.ctx || this.ambience || !input.soundOn) return;
         const now = this.ctx.currentTime;
         const bus = this.ctx.createGain();
@@ -128,6 +131,7 @@ const audio = {
         this.ambienceNodes.push(lfo, lfoGain);
         // Sparse, gentle high notes give the soundtrack a drifting sci-fi feel.
         this.ambientNoteTimer = this.ctx.currentTime;
+        }).catch(() => {});
     },
     stopAmbience() {
         if (!this.ctx || !this.ambience) return;
@@ -142,11 +146,12 @@ const audio = {
     },
     setEnabled(enabled) {
         input.soundOn = enabled;
-        this.resume();
-        if (!this.ctx || !this.master) return;
-        this.master.gain.setTargetAtTime(enabled ? 0.34 : 0, this.ctx.currentTime, 0.06);
-        if (enabled && state.running) this.startAmbience();
-        else this.stopAmbience();
+        this.resume().then(() => {
+            if (!this.ctx || !this.master) return;
+            this.master.gain.setTargetAtTime(enabled ? 0.34 : 0, this.ctx.currentTime, 0.06);
+            if (enabled && state.running) this.startAmbience();
+            else if (!enabled) this.stopAmbience();
+        }).catch(() => {});
     },
     hit() {
         this.beep({ freq: 210, type: "sawtooth", dur: 0.24, gain: 0.32, slide: 0.34, q: 3 });
@@ -190,8 +195,9 @@ function setScreen(mode) {
 
 function startGame() {
     input.interacted = true;
-    audio.resume();
-    audio.startAmbience();
+    audio.resume().then(() => {
+        if (state.running && input.soundOn) audio.startAmbience();
+    }).catch(() => {});
 
     state.running = true;
     state.gameOver = false;
