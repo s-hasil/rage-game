@@ -51,10 +51,15 @@ as $$
 declare
   chosen_name text;
 begin
-  chosen_name := coalesce(
+  chosen_name := left(coalesce(
     nullif(trim(new.raw_user_meta_data ->> 'username'), ''),
     'Pilot' || substr(new.id::text, 1, 6)
-  );
+  ), 18);
+
+  -- Keep names unique even when two people choose the same pilot name.
+  if exists (select 1 from public.profiles where lower(username) = lower(chosen_name)) then
+    chosen_name := left(chosen_name, 11) || '-' || substr(new.id::text, 1, 6);
+  end if;
 
   insert into public.profiles (id, username)
   values (new.id, chosen_name)
