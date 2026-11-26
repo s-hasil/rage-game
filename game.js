@@ -1026,7 +1026,10 @@ if (authForm) {
                 const { data, error } = await supabaseClient.auth.signUp({
                     email: authEmail.value.trim(),
                     password: authPassword.value,
-                    options: { data: { username } }
+                    options: {
+                        data: { username },
+                        emailRedirectTo: "https://s-hasil.github.io/rage-game/"
+                    }
                 });
                 if (error) throw error;
                 if (data.session) showAuthMessage("Account created. You're signed in and ready to fly.");
