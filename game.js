@@ -148,7 +148,7 @@ const audio = {
         this.resume().then(() => {
             if (!this.ctx || !this.master) return;
             this.master.gain.setTargetAtTime(enabled ? 0.62 : 0, this.ctx.currentTime, 0.04);
-            if (enabled && state.running) this.startAmbience();
+            if (enabled) this.startAmbience();
             if (!enabled) this.stopAmbience();
         }).catch(() => {});
     },
@@ -878,9 +878,9 @@ bindTouchButton(rightBtn, "right");
 playBtn.addEventListener("click", startGame);
 restartBtn.addEventListener("click", startGame);
 menuBtn.addEventListener("click", () => {
-    audio.stopAmbience();
     state.running = false;
     state.gameOver = false;
+    if (input.soundOn) audio.startAmbience();
     state.hazards = [];
     state.particles = [];
     setScreen("menu");
