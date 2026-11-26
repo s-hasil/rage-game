@@ -1313,6 +1313,223 @@ function draw() {
     if (state.shake > 0) state.shake *= 0.88;
 }
 
+
+/* VOIDRUN 3D flight renderer — gameplay state remains owned by the original game loop. */
+let threeRenderer = null;
+let threeScene = null;
+let threeCamera = null;
+let threePlayer = null;
+let threeHazards = [];
+let threePowerUps = [];
+let threeStars = null;
+let threeShield = null;
+let threeFlame = null;
+const threeWorld = { width: canvas.width, height: canvas.height };
+
+function worldPoint(x, y, z = 0) {
+    return new THREE.Vector3(x - threeWorld.width / 2, threeWorld.height / 2 - y, z);
+}
+function makeGlow(color, opacity = 0.25) {
+    const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.DoubleSide, depthWrite: false });
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), material);
+    return mesh;
+}
+function createRocket3D() {
+    const group = new THREE.Group();
+    const hullMat = new THREE.MeshStandardMaterial({ color: 0xd8edf5, metalness: .72, roughness: .24 });
+    const darkMat = new THREE.MeshStandardMaterial({ color: 0x243d56, metalness: .75, roughness: .3 });
+    const orangeMat = new THREE.MeshStandardMaterial({ color: 0xff8b58, metalness: .48, roughness: .32, emissive: 0x6b210c, emissiveIntensity: .35 });
+    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x51dfff, metalness: .3, roughness: .12, clearcoat: 1, emissive: 0x087fa8, emissiveIntensity: .75 });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(13, 15, 43, 12, 1), hullMat);
+    body.position.y = -1; body.castShadow = true; group.add(body);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(13, 25, 12), hullMat);
+    nose.position.y = 33; nose.castShadow = true; group.add(nose);
+    const engine = new THREE.Mesh(new THREE.CylinderGeometry(8, 10, 11, 12), darkMat);
+    engine.position.y = -26; group.add(engine);
+    const cockpit = new THREE.Mesh(new THREE.SphereGeometry(8, 24, 16), glassMat);
+    cockpit.scale.set(.92, 1.18, .62); cockpit.position.set(0, 8, 11); group.add(cockpit);
+    for (const side of [-1, 1]) {
+        const fin = new THREE.Mesh(new THREE.BoxGeometry(5, 20, 7), orangeMat);
+        fin.position.set(side * 15, -17, 0); fin.rotation.z = side * -.34; group.add(fin);
+        const nav = new THREE.Mesh(new THREE.SphereGeometry(2.2, 12, 8), orangeMat);
+        nav.position.set(side * 20, -22, 3); group.add(nav);
+    }
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(8, 30, 12), new THREE.MeshBasicMaterial({ color: 0x36bfff, transparent: true, opacity: .88 }));
+    flame.position.y = -47; flame.rotation.z = Math.PI; group.add(flame);
+    const innerFlame = new THREE.Mesh(new THREE.ConeGeometry(4, 19, 10), new THREE.MeshBasicMaterial({ color: 0xc7ffff, transparent: true, opacity: .9 }));
+    innerFlame.position.y = -43; innerFlame.rotation.z = Math.PI; group.add(innerFlame);
+    group.userData.flame = flame;
+    const aura = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: 0x28caff, transparent: true, opacity: .09, depthWrite: false }));
+    aura.scale.set(27, 49, 8); aura.position.y = -8; group.add(aura);
+    return group;
+}
+function createHazard3D(h) {
+    const group = new THREE.Group();
+    if (h.type === "wreckage") {
+        const metal = new THREE.MeshStandardMaterial({ color: 0x7395b1, metalness: .82, roughness: .28 });
+        const dark = new THREE.MeshStandardMaterial({ color: 0x1a2d43, metalness: .7, roughness: .36 });
+        const orange = new THREE.MeshStandardMaterial({ color: 0xff915e, metalness: .5, roughness: .3, emissive: 0x5b1b08 });
+        const core = new THREE.Mesh(new THREE.DodecahedronGeometry(h.size * .43, 0), metal);
+        core.scale.set(.78, 1.12, .62); core.castShadow = true; group.add(core);
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(h.size * 1.45, h.size * .17, h.size * .24), dark);
+        wing.rotation.z = -.3; wing.position.y = -h.size * .12; group.add(wing);
+        const brokenFin = new THREE.Mesh(new THREE.ConeGeometry(h.size * .22, h.size * .65, 4), orange);
+        brokenFin.position.set(h.size * .52, h.size * .2, 2); brokenFin.rotation.z = -.9; group.add(brokenFin);
+        const light = new THREE.Mesh(new THREE.SphereGeometry(h.size * .12, 16, 12), new THREE.MeshBasicMaterial({ color: 0x67edff }));
+        light.position.set(0, h.size * .12, h.size * .4); group.add(light);
+    } else {
+        const rockMat = new THREE.MeshStandardMaterial({ color: 0xc76a3f, roughness: .88, metalness: .08, flatShading: true, emissive: 0x45120b, emissiveIntensity: .18 });
+        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(h.size * .48, 1), rockMat);
+        rock.scale.set(1.04, .88, .82); rock.castShadow = true; group.add(rock);
+        const hot = new THREE.Mesh(new THREE.SphereGeometry(h.size * .13, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffd08a }));
+        hot.position.set(-h.size * .13, h.size * .18, h.size * .36); group.add(hot);
+    }
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(h.size * .66, 20, 12), new THREE.MeshBasicMaterial({
+        color: h.type === "wreckage" ? 0xff9b5e : 0xff713c, transparent: true, opacity: .08, depthWrite: false
+    }));
+    group.add(halo);
+    return group;
+}
+function createPowerUp3D() {
+    const group = new THREE.Group();
+    const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(12, 1), new THREE.MeshPhysicalMaterial({
+        color: 0x9cfff5, metalness: .35, roughness: .12, emissive: 0x0aa9b7, emissiveIntensity: 1.2, clearcoat: 1
+    }));
+    crystal.scale.set(.82, 1.1, .72); group.add(crystal);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(18, 1.5, 8, 36), new THREE.MeshBasicMaterial({ color: 0x64fff0, transparent: true, opacity: .8 }));
+    ring.rotation.x = .55; group.add(ring);
+    return group;
+}
+function initThreeRenderer() {
+    if (!window.THREE || threeRenderer) return;
+    try {
+        const shell = document.querySelector(".game-shell");
+        const layer = document.createElement("div");
+        layer.className = "three-game-layer";
+        layer.setAttribute("aria-hidden", "true");
+        shell.insertBefore(layer, shell.firstChild);
+        threeRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+        threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
+        threeRenderer.setSize(canvas.clientWidth || 420, canvas.clientHeight || 700, false);
+        threeRenderer.outputColorSpace = THREE.SRGBColorSpace;
+        threeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+        threeRenderer.toneMappingExposure = 1.22;
+        layer.appendChild(threeRenderer.domElement);
+        threeScene = new THREE.Scene();
+        threeScene.background = new THREE.Color(0x050b19);
+        threeScene.fog = new THREE.FogExp2(0x071326, .0017);
+        threeCamera = new THREE.OrthographicCamera(-210, 210, 350, -350, .1, 500);
+        threeCamera.position.set(0, 0, 150);
+        threeCamera.lookAt(0, 0, 0);
+        threeScene.add(new THREE.HemisphereLight(0xa8eaff, 0x11172d, 2.15));
+        const key = new THREE.DirectionalLight(0xc8efff, 3.1); key.position.set(-65, 95, 100); threeScene.add(key);
+        const warm = new THREE.PointLight(0xff8c55, 95, 260); warm.position.set(-125, 120, 35); threeScene.add(warm);
+        const cool = new THREE.PointLight(0x28bfff, 65, 240); cool.position.set(135, -95, 35); threeScene.add(cool);
+
+        // Perspective flight-lane grid with luminous horizon.
+        const gridMat = new THREE.LineBasicMaterial({ color: 0x1d6385, transparent: true, opacity: .28 });
+        const gridPoints = [];
+        const horizonY = 105;
+        for (let i = -7; i <= 7; i++) {
+            gridPoints.push(new THREE.Vector3(i * 3, horizonY, -18), new THREE.Vector3(i * 34, -350, -18));
+        }
+        for (let j = 0; j < 9; j++) {
+            const t = j / 8;
+            const y = horizonY - t * 455;
+            const half = 3 + t * 235;
+            gridPoints.push(new THREE.Vector3(-half, y, -18), new THREE.Vector3(half, y, -18));
+        }
+        const gridGeo = new THREE.BufferGeometry().setFromPoints(gridPoints);
+        threeScene.add(new THREE.LineSegments(gridGeo, gridMat));
+        const horizon = new THREE.Mesh(new THREE.PlaneGeometry(420, 1.2), new THREE.MeshBasicMaterial({ color: 0x3ad8ff, transparent: true, opacity: .22 }));
+        horizon.position.set(0, horizonY, -15); threeScene.add(horizon);
+
+        const planet = new THREE.Group();
+        const sphere = new THREE.Mesh(new THREE.SphereGeometry(42, 48, 32), new THREE.MeshStandardMaterial({ color: 0x274d70, metalness: .38, roughness: .58 }));
+        sphere.scale.set(1.34, .82, .72); planet.add(sphere);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(59, 2.2, 8, 100), new THREE.MeshBasicMaterial({ color: 0x73c9ed, transparent: true, opacity: .32 }));
+        ring.scale.set(1.55, .45, 1); ring.rotation.x = .35; planet.add(ring);
+        planet.position.set(112, 135, -25); planet.rotation.z = -.2; threeScene.add(planet);
+
+        const starPositions = new Float32Array(420 * 3);
+        for (let i = 0; i < 420; i++) {
+            starPositions[i * 3] = (Math.random() - .5) * 420;
+            starPositions[i * 3 + 1] = (Math.random() - .5) * 700;
+            starPositions[i * 3 + 2] = -35 - Math.random() * 35;
+        }
+        const starGeo = new THREE.BufferGeometry();
+        starGeo.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
+        threeStars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x9bdfff, size: 1.6, transparent: true, opacity: .78, sizeAttenuation: false }));
+        threeScene.add(threeStars);
+
+        threePlayer = createRocket3D();
+        threePlayer.position.copy(worldPoint(player.x, player.y, 12));
+        threeScene.add(threePlayer);
+        threeFlame = threePlayer.userData.flame;
+        threeShield = new THREE.Mesh(new THREE.TorusGeometry(34, 1.5, 10, 64), new THREE.MeshBasicMaterial({ color: 0x67fff1, transparent: true, opacity: .8 }));
+        threeShield.scale.set(1, 1.45, 1); threeShield.position.z = 14; threeShield.visible = false; threePlayer.add(threeShield);
+
+        window.addEventListener("resize", resizeThreeRenderer);
+        document.querySelector(".game-shell").classList.add("has-3d-renderer");
+    } catch (error) {
+        console.warn("VOIDRUN 3D renderer unavailable; keeping the canvas renderer.", error);
+    }
+}
+function resizeThreeRenderer() {
+    if (!threeRenderer) return;
+    const width = canvas.clientWidth || 420;
+    const height = canvas.clientHeight || 700;
+    threeRenderer.setSize(width, height, false);
+    const aspect = width / height;
+    const viewHeight = threeWorld.height;
+    threeCamera.left = -viewHeight * aspect / 2;
+    threeCamera.right = viewHeight * aspect / 2;
+    threeCamera.top = viewHeight / 2;
+    threeCamera.bottom = -viewHeight / 2;
+    threeCamera.updateProjectionMatrix();
+}
+function syncThreeObjects(collection, source, factory) {
+    while (collection.length < source.length) {
+        const mesh = factory(source[collection.length]);
+        collection.push(mesh);
+        threeScene.add(mesh);
+    }
+    while (collection.length > source.length) {
+        const mesh = collection.pop();
+        threeScene.remove(mesh);
+        mesh.traverse(node => {
+            if (node.geometry) node.geometry.dispose();
+            if (node.material) {
+                (Array.isArray(node.material) ? node.material : [node.material]).forEach(material => material.dispose());
+            }
+        });
+    }
+    source.forEach((item, index) => {
+        const mesh = collection[index];
+        mesh.position.copy(worldPoint(item.x, item.y, item.type === "wreckage" ? 5 : 2));
+        mesh.rotation.set(item.rotation * .22, item.rotation * .18, item.rotation);
+        const scale = item.size / 38;
+        mesh.scale.setScalar(scale);
+    });
+}
+function renderThreeScene() {
+    if (!threeRenderer) return;
+    if (threeRenderer.domElement.width !== Math.round((canvas.clientWidth || 420) * threeRenderer.getPixelRatio())) resizeThreeRenderer();
+    syncThreeObjects(threeHazards, state.hazards, createHazard3D);
+    syncThreeObjects(threePowerUps, state.powerUps, createPowerUp3D);
+    threePlayer.position.copy(worldPoint(player.x, player.y - 7 + Math.sin(player.idleT * 5) * 1.8, 12));
+    threePlayer.rotation.z = Math.max(-.22, Math.min(.22, player.vx / player.maxSpeed * -.22));
+    const flamePulse = .82 + Math.sin(player.idleT * 34) * .17 + Math.min(1, Math.abs(player.vx) / player.maxSpeed) * .18;
+    threeFlame.scale.set(1, flamePulse, 1);
+    threeShield.visible = state.invulnerable > 0 || state.shieldFade > 0;
+    threeShield.material.opacity = state.shieldFade > 0 ? Math.max(.08, state.shieldFade / .6) : (state.invulnerable <= 2 ? .42 + Math.sin(state.elapsed * 22) * .28 : .78);
+    threeShield.material.color.set(state.invulnerable > 0 && state.invulnerable <= 2 ? 0xffbd69 : 0x67fff1);
+    threeShield.rotation.y += .018;
+    threeScene.rotation.z = state.shake > 0 ? (Math.random() - .5) * .012 : 0;
+    if (threeStars) threeStars.rotation.z = Math.sin(state.elapsed * .025) * .008;
+    threeRenderer.render(threeScene, threeCamera);
+}
+
 function loop(ts) {
     if (!state.lastTime) state.lastTime = ts;
     let dt = Math.min(0.033, (ts - state.lastTime) / 1000);
@@ -1335,6 +1552,7 @@ function loop(ts) {
     }
 
     draw();
+    renderThreeScene();
     requestAnimationFrame(loop);
 }
 
@@ -1522,6 +1740,7 @@ if (authForm) {
 
 // Initial UI setup
 updateScoreDisplays();
+initThreeRenderer();
 setScreen("menu");
 state.floaters = createFloaters(34);
 requestAnimationFrame(loop);
