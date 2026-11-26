@@ -53,10 +53,36 @@ const authModeToggle = document.getElementById("authModeToggle");
 const logoutBtn = document.getElementById("logoutBtn");
 const authMessage = document.getElementById("authMessage");
 const playerStatus = document.getElementById("playerStatus");
+const profileMenu = document.getElementById("profileMenu");
+const profileMenuToggle = document.getElementById("profileMenuToggle");
+const profileDropdown = document.getElementById("profileDropdown");
+const headerAvatar = document.getElementById("headerAvatar");
+const headerAvatarFallback = document.getElementById("headerAvatarFallback");
+const profileScreen = document.getElementById("profileScreen");
+const profileNameForm = document.getElementById("profileNameForm");
+const profileNameInput = document.getElementById("profileNameInput");
+const profileAvatar = document.getElementById("profileAvatar");
+const profileAvatarFallback = document.getElementById("profileAvatarFallback");
+const avatarUpload = document.getElementById("avatarUpload");
+const profileDisplayName = document.getElementById("profileDisplayName");
+const profileJoined = document.getElementById("profileJoined");
+const profileMessage = document.getElementById("profileMessage");
+const profileSecurityNote = document.getElementById("profileSecurityNote");
 const communityTitle = document.getElementById("communityTitle");
 const communityIntro = document.getElementById("communityIntro");
 const leaderboardList = document.getElementById("leaderboardList");
 
+async function signOutPlayer() {
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) { showAuthMessage(error.message, true); showProfileMessage(error.message, true); return; }
+    state.running = false;
+    state.gameOver = false;
+    profileScreen.hidden = true;
+    profileDropdown.hidden = true;
+    document.body.classList.remove("profile-open");
+    setScreen("menu");
+    showAuthMessage("You have signed out. Sign in again to continue.");
+}
 function showAuthMessage(message, isError = false) {
     authMessage.textContent = message;
     authMessage.classList.toggle("error", isError);
@@ -76,6 +102,8 @@ function renderAuthState() {
     const signedIn = Boolean(currentUser);
     document.body.classList.toggle("authenticated", signedIn);
     playerStatus.hidden = !signedIn;
+    profileMenu.hidden = !signedIn;
+    if (signedIn) refreshProfileUI();
     playerStatus.textContent = signedIn ? (currentUser.user_metadata?.username || currentUser.email || "SIGNED IN").toUpperCase() : ""; 
     communityTitle.innerHTML = signedIn ? 'THE <span>LEADERBOARD.</span>' : 'PILOT <span>ACCESS.</span>';
     communityIntro.textContent = signedIn ? "Your pilot account is active. Track your best runs and compare scores with the global community." : "Sign in or create your pilot account to unlock VOIDRUN.";
@@ -84,6 +112,68 @@ function renderAuthState() {
     if (signedIn) showAuthMessage("Signed in. Your finished runs will be saved to the global leaderboard.");
     else setAuthMode(authMode);
 }
+
+function showProfileMessage(message, isError = false) {
+    profileMessage.textContent = message;
+    profileMessage.classList.toggle("error", isError);
+}
+function currentPilotName() {
+    return currentUser?.user_metadata?.username || currentUser?.user_metadata?.full_name ||
+        currentUser?.user_metadata?.name || currentUser?.email?.split("@")[0] || "Pilot";
+}
+function setAvatar(imageUrl) {
+    [headerAvatar, profileAvatar].forEach(img => {
+        if (imageUrl) { img.src = imageUrl; img.hidden = false; }
+        else { img.removeAttribute("src"); img.hidden = true; }
+    });
+    const initials = currentPilotName().trim().charAt(0).toUpperCase() || "P";
+    headerAvatarFallback.textContent = initials;
+    profileAvatarFallback.textContent = initials;
+    headerAvatarFallback.hidden = Boolean(imageUrl);
+    profileAvatarFallback.hidden = Boolean(imageUrl);
+}
+async function refreshProfileUI() {
+    if (!currentUser) return;
+    const { data } = await supabaseClient.from("profiles").select("username,avatar_url,created_at").eq("id", currentUser.id).maybeSingle();
+    const name = data?.username || currentPilotName();
+    profileNameInput.value = name;
+    profileDisplayName.textContent = name;
+    profileJoined.textContent = data?.created_at ? "Joined " + new Date(data.created_at).toLocaleDateString() : "";
+    setAvatar(data?.avatar_url || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || "");
+    const isGoogle = currentUser.app_metadata?.provider === "google" ||
+        currentUser.identities?.some(identity => identity.provider === "google");
+    profileSecurityNote.textContent = isGoogle
+        ? "This account uses Google sign-in. Manage its password through your Google Account."
+        : "A secure password reset link will be sent to your account email.";
+    document.getElementById("profileResetBtn").disabled = isGoogle;
+    document.getElementById("dropdownResetBtn").disabled = isGoogle;
+}
+function openProfile() {
+    profileDropdown.hidden = true;
+    profileMenuToggle.setAttribute("aria-expanded", "false");
+    document.body.classList.add("profile-open");
+    profileScreen.hidden = false;
+    refreshProfileUI();
+    profileScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function closeProfile() {
+    profileScreen.hidden = true;
+    document.body.classList.remove("profile-open");
+    document.getElementById("communityPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+async function sendPasswordReset() {
+    if (!currentUser || !supabaseClient) return;
+    if (currentUser.app_metadata?.provider === "google" || currentUser.identities?.some(i => i.provider === "google")) {
+        showProfileMessage("This account uses Google sign-in. Change its password through Google.", true);
+        return;
+    }
+    const email = currentUser.email;
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: "https://s-hasil.github.io/rage-game/"
+    });
+    showProfileMessage(error ? error.message : "Password reset link sent to " + email + ".");
+}
+
 async function loadLeaderboard() {
     if (!supabaseClient) {
         leaderboardList.innerHTML = '<li class="leaderboard-empty">Leaderboard service could not load. Refresh the page.</li>';
@@ -1089,16 +1179,54 @@ if (authForm) {
         }
     });
     authModeToggle.addEventListener("click", () => setAuthMode(authMode === "login" ? "register" : "login"));
-    logoutBtn.addEventListener("click", async () => {
-        const { error } = await supabaseClient.auth.signOut();
-        if (error) showAuthMessage(error.message, true);
-        else {
-            state.running = false;
-            state.gameOver = false;
-            setScreen("menu");
-            showAuthMessage("You have signed out. Sign in again to continue.");
-        }
+    profileMenuToggle.addEventListener("click", () => {
+        const opening = profileDropdown.hidden;
+        profileDropdown.hidden = !opening;
+        profileMenuToggle.setAttribute("aria-expanded", String(opening));
     });
+    document.getElementById("openProfileBtn").addEventListener("click", openProfile);
+    document.getElementById("dropdownResetBtn").addEventListener("click", () => { profileScreen.hidden = false; openProfile(); sendPasswordReset(); });
+    document.getElementById("profileResetBtn").addEventListener("click", sendPasswordReset);
+    document.getElementById("profileBackBtn").addEventListener("click", closeProfile);
+    document.getElementById("profileSignOutBtn").addEventListener("click", signOutPlayer);
+    document.getElementById("dropdownSignOutBtn").addEventListener("click", signOutPlayer);
+    profileNameForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        if (!currentUser) return;
+        const username = profileNameInput.value.trim();
+        if (username.length < 3 || username.length > 18) return showProfileMessage("Player name must be 3–18 characters.", true);
+        const { error } = await supabaseClient.from("profiles").update({ username }).eq("id", currentUser.id);
+        if (error) return showProfileMessage(error.code === "23505" ? "That player name is already taken." : error.message, true);
+        const { error: metadataError } = await supabaseClient.auth.updateUser({ data: { username } });
+        if (metadataError) console.warn("Profile name saved, but auth metadata did not update:", metadataError.message);
+        currentUser = { ...currentUser, user_metadata: { ...currentUser.user_metadata, username } };
+        profileDisplayName.textContent = username;
+        setAvatar(document.getElementById("profileAvatar").src || "");
+        showProfileMessage("Player name updated.");
+        await loadLeaderboard();
+        renderAuthState();
+    });
+    avatarUpload.addEventListener("change", async () => {
+        const file = avatarUpload.files?.[0];
+        if (!file || !currentUser) return;
+        if (!["image/jpeg","image/png","image/webp"].includes(file.type) || file.size > 2 * 1024 * 1024) {
+            showProfileMessage("Choose a JPG, PNG or WebP image under 2 MB.", true); avatarUpload.value = ""; return;
+        }
+        showProfileMessage("Uploading profile picture…");
+        const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+        const path = currentUser.id + "/avatar." + extension;
+        const { error: uploadError } = await supabaseClient.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+        if (uploadError) { showProfileMessage("Avatar upload failed: " + uploadError.message, true); return; }
+        const { data: publicData } = supabaseClient.storage.from("avatars").getPublicUrl(path);
+        const avatarUrl = publicData.publicUrl + "?v=" + Date.now();
+        const { error: saveError } = await supabaseClient.from("profiles").update({ avatar_url: avatarUrl }).eq("id", currentUser.id);
+        if (saveError) { showProfileMessage("Image uploaded, but profile update failed: " + saveError.message, true); return; }
+        await supabaseClient.auth.updateUser({ data: { avatar_url: avatarUrl } });
+        setAvatar(avatarUrl);
+        showProfileMessage("Profile picture updated.");
+        avatarUpload.value = "";
+    });
+    logoutBtn.addEventListener("click", signOutPlayer);
     document.getElementById("refreshLeaderboard").addEventListener("click", loadLeaderboard);
     initializeCommunity();
 }
