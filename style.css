@@ -481,19 +481,59 @@ body.player-authenticated .community-panel .leaderboard-note { display:none; }
 }
 
 
-/* Preserve the intended portrait flight viewport; never squash the canvas to fill a wide panel. */
-body.playing .game-section { width:min(620px,100%); margin:14px auto 0; }
-body.playing .game-shell { width:100%; padding:8px; }
+/* Responsive flight deck: use the available screen, keep the canvas proportional, remove empty side gutters. */
+body.playing { padding: 0 12px 10px; }
+body.playing .app { width:100%; max-width:none; }
+body.playing .game-section {
+  display:block !important;
+  width:fit-content;
+  max-width:100%;
+  margin:10px auto 0;
+}
+body.playing .game-heading {
+  width:100%;
+  margin:0 auto 8px;
+  font-size:clamp(7px, .72vw, 9px);
+}
+body.playing .game-shell {
+  width:fit-content;
+  max-width:100%;
+  margin:0 auto;
+  padding:6px;
+}
 body.playing canvas#game {
-  width:auto;
-  height:min(78vh, 900px);
+  display:block;
+  width:min(480px, calc((100dvh - 105px) * .6));
+  height:auto;
   max-width:100%;
   max-height:none;
   aspect-ratio:3 / 5;
   margin:0 auto;
   object-fit:contain;
 }
+body.playing .hud { top:16px; left:16px; right:16px; }
+body.playing .flight-status { top:72px; left:17px; }
+body.playing .gameover-screen { inset:6px; }
+
 @media (max-width:760px) {
-  body.playing .game-section { width:100%; margin-top:10px; }
-  body.playing canvas#game { height:min(72vh, 760px); }
+  body.playing { padding:0 8px max(8px, env(safe-area-inset-bottom)); }
+  body.playing .game-section { width:100%; margin:7px auto 0; }
+  body.playing .game-heading { margin-bottom:6px; }
+  body.playing .game-shell { width:fit-content; max-width:100%; padding:5px; }
+  body.playing canvas#game {
+    width:min(calc(100vw - 26px), calc((100dvh - 145px) * .6), 480px);
+    height:auto;
+  }
+  body.playing .hud { top:12px; left:12px; right:12px; gap:4px; }
+  body.playing .hud-card { min-width:0; padding:6px 7px; }
+  body.playing .hud-card strong { font-size:clamp(15px,4vw,19px); }
+  body.playing .hud-label { font-size:6px; }
+  body.playing .flight-status { top:64px; left:12px; font-size:6px; }
+  body.playing .touch-controls { right:14px; bottom:14px; left:14px; }
+  body.playing .touch-btn { width:58px; height:58px; }
+}
+@media (max-height:560px) and (orientation:landscape) {
+  body.playing .game-section { margin-top:2px; }
+  body.playing canvas#game { width:min(calc((100dvh - 48px) * .6), 480px); }
+  body.playing .game-heading { margin-bottom:3px; }
 }
