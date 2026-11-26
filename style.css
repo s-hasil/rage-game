@@ -211,3 +211,21 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-
     .gameover-screen .menu-actions { width: 100%; gap: 10px; }
     .gameover-screen .launch-btn { width: min(230px, 100%); }
 }
+
+
+/* Full-screen view switching: home and flight are mutually exclusive. */
+body.playing { padding-top: 0; }
+body.playing .topbar,
+body.playing .site-footer,
+body.playing #menuScreen { display: none !important; }
+body.playing .game-section {
+    display: block !important;
+    width: min(760px, 100%);
+    margin: 18px auto 0;
+}
+body:not(.playing) .game-section { display: none !important; }
+body:not(.playing) #gameOverScreen { display: none !important; }
+body.playing .gameover-screen.active { display: flex !important; }
+body.playing .game-footer { display: none; }
+body.playing .game-heading { margin-bottom: 10px; }
+body.playing .game-shell { margin-top: 0; }
