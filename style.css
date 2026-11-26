@@ -483,6 +483,15 @@ body.player-authenticated .community-panel .leaderboard-note { display:none; }
 
 /* True responsive playfield: use the visible viewport and adapt the canvas world height to match. */
 html, body { width:100%; min-height:100%; }
+/* Keep the browser's bottom safe-area/nav backdrop dark while playing. */
+body.playing {
+  background: #070b18 !important;
+}
+body.playing .ambient,
+body.playing .space-noise,
+body.playing::before {
+  display:none !important;
+}
 body.playing {
   width:100%;
   height:100dvh;
