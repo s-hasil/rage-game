@@ -50,7 +50,7 @@ const authPassword = document.getElementById("authPassword");
 const authSubmit = document.getElementById("authSubmit");
 const googleAuthBtn = document.getElementById("googleAuthBtn");
 const authModeToggle = document.getElementById("authModeToggle");
-const logoutBtn = document.getElementById("logoutBtn");
+const logoutBtn = null;
 const authMessage = document.getElementById("authMessage");
 const playerStatus = document.getElementById("playerStatus");
 const profileMenu = document.getElementById("profileMenu");
@@ -108,7 +108,7 @@ function renderAuthState() {
     communityTitle.innerHTML = signedIn ? 'THE <span>LEADERBOARD.</span>' : 'PILOT <span>ACCESS.</span>';
     communityIntro.textContent = signedIn ? "Your pilot account is active. Track your best runs and compare scores with the global community." : "Sign in or create your pilot account to unlock VOIDRUN.";
     authForm.querySelectorAll("label, input, #authSubmit, #authModeToggle, #googleAuthBtn, .auth-divider").forEach(el => { el.hidden = signedIn; });
-    logoutBtn.hidden = !signedIn;
+
     if (signedIn) showAuthMessage("Signed in. Your finished runs will be saved to the global leaderboard.");
     else setAuthMode(authMode);
 }
@@ -1226,7 +1226,7 @@ if (authForm) {
         showProfileMessage("Profile picture updated.");
         avatarUpload.value = "";
     });
-    logoutBtn.addEventListener("click", signOutPlayer);
+
     document.getElementById("refreshLeaderboard").addEventListener("click", loadLeaderboard);
     initializeCommunity();
 }
