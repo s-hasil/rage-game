@@ -2,6 +2,7 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 const menuScreen = document.getElementById("menuScreen");
+const gameSection = document.querySelector(".game-section");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const playBtn = document.getElementById("playBtn");
 const restartBtn = document.getElementById("restartBtn");
@@ -125,10 +126,12 @@ function updateScoreDisplays() {
 }
 
 function setScreen(mode) {
-    menuScreen.classList.remove("active");
-    gameOverScreen.classList.remove("active");
-    if (mode === "menu") menuScreen.classList.add("active");
-    if (mode === "gameOver") gameOverScreen.classList.add("active");
+    menuScreen.classList.toggle("active", mode === "menu");
+    gameSection.classList.toggle("active", mode === "game" || mode === "gameOver");
+    gameOverScreen.classList.toggle("active", mode === "gameOver");
+    document.body.classList.toggle("playing", mode !== "menu");
+    input.left = false;
+    input.right = false;
 }
 
 function startGame() {
@@ -153,7 +156,7 @@ function startGame() {
     player.x = canvas.width / 2;
     player.vx = 0;
 
-    setScreen("none");
+    setScreen("game");
     updateScoreDisplays();
 }
 
@@ -757,6 +760,9 @@ playBtn.addEventListener("click", startGame);
 restartBtn.addEventListener("click", startGame);
 menuBtn.addEventListener("click", () => {
     state.running = false;
+    state.gameOver = false;
+    state.hazards = [];
+    state.particles = [];
     setScreen("menu");
 });
 
