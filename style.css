@@ -443,3 +443,23 @@ body.profile-open .profile-screen { display:block !important; }
  .profile-heading { align-items:flex-start;gap:12px; }
  .profile-menu { margin-right:8px; }
 }
+
+/* Profile is a dedicated full-screen view, not a section of the home screen. */
+body.profile-open { overflow:hidden; }
+body.profile-open .app > .topbar,
+body.profile-open .app > #menuScreen,
+body.profile-open .app > #communityPanel,
+body.profile-open .app > .game-section,
+body.profile-open .app > .site-footer { visibility:hidden; pointer-events:none; }
+body.profile-open .app > #profileScreen.profile-screen {
+  position:fixed !important; inset:0 !important; z-index:1000 !important;
+  display:block !important; visibility:visible !important; pointer-events:auto !important;
+  width:100%; height:100dvh; overflow-y:auto; box-sizing:border-box;
+  padding:clamp(24px,5vh,56px) clamp(18px,7vw,100px);
+  border:0; background:
+    radial-gradient(ellipse at 85% 12%,rgba(34,211,238,.10),transparent 34%),
+    radial-gradient(ellipse at 10% 90%,rgba(113,91,255,.10),transparent 36%),
+    #070b18;
+}
+body.profile-open .app > #profileScreen .profile-card { max-width:920px; margin:0 auto; }
+body.profile-open .app > #profileScreen .profile-heading { max-width:920px; margin:0 auto 28px; }
