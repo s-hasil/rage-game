@@ -1,0 +1,39 @@
+name: Build ASTRIXAL Android App Bundle
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'index.html'
+      - 'style.css'
+      - 'game.js'
+      - 'package.json'
+      - 'capacitor.config.ts'
+      - 'scripts/**'
+      - '.github/workflows/android-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install
+      - run: npx cap add android
+      - run: npm run android:sync
+      - name: Build debug APK for device testing
+        run: cd android && ./gradlew assembleDebug
+      - name: Build release AAB (unsigned)
+        run: cd android && ./gradlew bundleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: astrixal-android-builds
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/bundle/release/app-release.aab
