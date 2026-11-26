@@ -877,6 +877,7 @@ bindTouchButton(rightBtn, "right");
 playBtn.addEventListener("click", startGame);
 restartBtn.addEventListener("click", startGame);
 menuBtn.addEventListener("click", () => {
+    audio.stopAmbience();
     state.running = false;
     state.gameOver = false;
     state.hazards = [];
