@@ -334,3 +334,40 @@ canvas {
 }
 
 body.playing .community-panel { display:none !important; }
+
+/* Mandatory sign-in gate: no game or home content is accessible before authentication. */
+body:not(.authenticated) { overflow:hidden; }
+body:not(.authenticated) .app > :not(#communityPanel) { display:none !important; }
+body:not(.authenticated) #communityPanel.auth-gate {
+    position:fixed; z-index:1000; inset:0; width:100%; min-height:100vh;
+    margin:0; padding:28px 5vw; overflow-y:auto;
+    display:flex; flex-direction:column; justify-content:center;
+    border:0; background:
+      radial-gradient(ellipse at 78% 18%, rgba(39,139,185,.18), transparent 38%),
+      radial-gradient(ellipse at 15% 85%, rgba(52,79,160,.16), transparent 40%),
+      #050a16;
+}
+body:not(.authenticated) .gate-brand {
+    display:flex; align-items:center; gap:12px; width:min(940px,100%);
+    margin:0 auto 32px; color:#eef8ff; font:900 23px "Barlow Condensed",sans-serif;
+    letter-spacing:.06em;
+}
+body:not(.authenticated) #communityPanel .community-top,
+body:not(.authenticated) #communityPanel .community-grid { width:min(940px,100%); margin-left:auto; margin-right:auto; }
+body:not(.authenticated) #communityPanel .community-top { align-items:flex-start; }
+body:not(.authenticated) #communityPanel .community-top h2 { font-size:clamp(38px,5vw,58px); }
+body:not(.authenticated) #communityPanel .community-grid { grid-template-columns:minmax(280px,.85fr) minmax(300px,1.15fr); }
+body:not(.authenticated) #communityPanel .auth-card { box-shadow:0 22px 70px rgba(0,0,0,.32); }
+body:not(.authenticated) #communityPanel .gate-leaderboard { opacity:.9; }
+body.authenticated #communityPanel.auth-gate { position:static; min-height:0; padding:30px 5.2% 42px; }
+body.authenticated .gate-brand { display:none; }
+body.authenticated #communityPanel .community-top,
+body.authenticated #communityPanel .community-grid { width:auto; }
+body.authenticated #communityPanel .community-grid { grid-template-columns:.85fr 1.15fr; }
+@media (max-width:760px) {
+ body:not(.authenticated) #communityPanel.auth-gate { padding:24px 5vw; justify-content:flex-start; }
+ body:not(.authenticated) .gate-brand { margin-bottom:24px; }
+ body:not(.authenticated) #communityPanel .community-top { margin-bottom:14px; }
+ body:not(.authenticated) #communityPanel .community-grid { grid-template-columns:1fr; }
+ body:not(.authenticated) #communityPanel .gate-leaderboard { display:none; }
+}
