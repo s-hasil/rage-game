@@ -169,3 +169,45 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Screen navigation: the landing page and playable game are separate views. */
+.game-section { display: none; }
+.game-section.active { display: block; }
+.menu-screen.active { display: grid; }
+.game-shell { position: relative; }
+.gameover-screen {
+    position: absolute;
+    z-index: 8;
+    inset: 8px;
+    width: auto;
+    margin: 0;
+    padding: 34px 28px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    border: 1px solid rgba(127,210,235,.32);
+    border-radius: 5px;
+    background: linear-gradient(145deg, rgba(7,15,31,.96), rgba(10,17,36,.97));
+    backdrop-filter: blur(12px);
+}
+.gameover-screen.active { display: flex; }
+.gameover-screen .eyebrow { justify-content: center; }
+.gameover-screen h2 { margin-top: 15px; }
+.gameover-screen .gameover-sub { max-width: 320px; }
+.gameover-screen .results-row { justify-content: center; width: min(360px, 100%); }
+.gameover-screen .menu-actions { justify-content: center; }
+.gameover-screen .gameover-mark { top: -48px; right: 22px; }
+.game-section.active { animation: screenEnter .32s ease both; }
+@keyframes screenEnter {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 760px) {
+    .game-section.active { margin-top: 20px; }
+    .gameover-screen { padding: 24px 14px; }
+    .gameover-screen h2 { font-size: 56px; }
+    .gameover-screen .menu-actions { width: 100%; gap: 10px; }
+    .gameover-screen .launch-btn { width: min(230px, 100%); }
+}
