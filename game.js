@@ -1438,7 +1438,25 @@ if (authForm) {
     initializeCommunity();
 }
 
+function resizeGameCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const logicalHeight = Math.max(500, Math.round(canvas.width * rect.height / rect.width));
+    if (canvas.height !== logicalHeight) {
+        canvas.height = logicalHeight;
+        if (typeof player !== "undefined") {
+            player.y = Math.min(canvas.height - 92, Math.max(90, player.y));
+        }
+    }
+}
+
+window.addEventListener("resize", resizeGameCanvas, { passive: true });
+window.addEventListener("orientationchange", () => {
+    requestAnimationFrame(resizeGameCanvas);
+}, { passive: true });
+
 // Initial UI setup
+resizeGameCanvas();
 updateScoreDisplays();
 setScreen("menu");
 state.floaters = createFloaters(34);
