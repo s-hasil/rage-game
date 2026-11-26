@@ -115,20 +115,11 @@ const audio = {
 const hazardTypes = ["meteor", "blade", "orb", "fireball"];
 
 // Static skyline silhouettes are generated once to keep the render loop lightweight.
-const cityBuildings = Array.from({ length: 24 }, (_, i) => {
-    const height = 48 + Math.random() * 116;
-    return {
-        x: i * 19 - 5,
-        w: 13 + Math.random() * 13,
-        h: height,
-        hue: Math.random() > 0.5 ? "cyan" : "violet",
-        windows: Array.from({ length: Math.max(2, Math.floor((height - 14) / 12)) }, () => Math.random() > 0.42)
-    };
-});
+// Star positions are generated once so the space scene stays smooth and inexpensive.
 
 function updateScoreDisplays() {
-    scoreValue.textContent = Math.floor(state.score);
-    bestValue.textContent = highScore;
+    scoreValue.textContent = String(Math.floor(state.score)).padStart(4, "0");
+    bestValue.textContent = String(highScore).padStart(4, "0");
     comboValue.textContent = `x${state.combo.toFixed(1)}`;
     menuBest.textContent = highScore;
 }
@@ -338,96 +329,51 @@ function updateDifficulty(dt) {
 }
 
 function drawBackground() {
-    const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    sky.addColorStop(0, "#101d43");
-    sky.addColorStop(0.48, "#10142d");
-    sky.addColorStop(1, "#050817");
+    const sky = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    sky.addColorStop(0, "#0c1a32");
+    sky.addColorStop(.42, "#080f22");
+    sky.addColorStop(1, "#030713");
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Distant neon skyline.
-    const horizon = 405;
+    // Distant nebula clouds.
+    const nebula = ctx.createRadialGradient(110, 180, 8, 110, 180, 245);
+    nebula.addColorStop(0, "rgba(35,116,164,.19)");
+    nebula.addColorStop(.55, "rgba(35,73,132,.08)");
+    nebula.addColorStop(1, "rgba(35,73,132,0)");
+    ctx.fillStyle = nebula;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // A far-off ringed planet gives the flight scene a sense of scale.
     ctx.save();
-    for (const b of cityBuildings) {
-        const top = horizon - b.h;
-        const body = ctx.createLinearGradient(b.x, top, b.x + b.w, horizon);
-        body.addColorStop(0, "#111d3d");
-        body.addColorStop(1, "#080e25");
-        ctx.fillStyle = body;
-        ctx.fillRect(b.x, top, b.w, b.h);
-        ctx.fillStyle = b.hue === "cyan" ? "rgba(66,226,255,.48)" : "rgba(204,93,255,.42)";
-        ctx.fillRect(b.x + 2, top + 8, 1.5, Math.max(8, b.h - 14));
-        for (let row = 0; row < b.windows.length; row++) {
-            if (b.windows[row]) {
-                ctx.globalAlpha = 0.28 + Math.sin(state.elapsed * 2 + row + b.x) * 0.08;
-                ctx.fillStyle = row % 2 ? "#60eaff" : "#ff9ee9";
-                ctx.fillRect(b.x + 4, top + 10 + row * 12, 3, 5);
-            }
-        }
-        ctx.globalAlpha = 1;
-    }
-    ctx.restore();
-
-    // Atmospheric glow at the skyline.
-    const horizonGlow = ctx.createRadialGradient(canvas.width / 2, horizon, 5, canvas.width / 2, horizon, 260);
-    horizonGlow.addColorStop(0, "rgba(35,190,255,.16)");
-    horizonGlow.addColorStop(1, "rgba(35,190,255,0)");
-    ctx.fillStyle = horizonGlow;
-    ctx.fillRect(0, 180, canvas.width, 360);
-
-    // A perspective floor gives the scene a subtle 2.5D arcade feel.
-    const floor = ctx.createLinearGradient(0, horizon, 0, canvas.height);
-    floor.addColorStop(0, "rgba(14,28,58,.18)");
-    floor.addColorStop(1, "rgba(3,7,20,.95)");
-    ctx.fillStyle = floor;
-    ctx.fillRect(0, horizon, canvas.width, canvas.height - horizon);
-
-    ctx.save();
+    ctx.translate(322, 225);
+    ctx.rotate(-.24);
+    ctx.strokeStyle = "rgba(112,190,218,.18)";
+    ctx.lineWidth = 7;
     ctx.beginPath();
-    ctx.rect(0, horizon, canvas.width, canvas.height - horizon);
-    ctx.clip();
-    ctx.strokeStyle = "rgba(60,205,255,.13)";
+    ctx.ellipse(0, 0, 74, 22, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    const planet = ctx.createRadialGradient(-19, -22, 2, 0, 0, 54);
+    planet.addColorStop(0, "#527b96");
+    planet.addColorStop(.5, "#203c5a");
+    planet.addColorStop(1, "#0a1428");
+    ctx.fillStyle = planet;
+    ctx.beginPath();
+    ctx.arc(0, 0, 48, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(135,206,228,.24)";
     ctx.lineWidth = 1;
-    const centerX = canvas.width / 2;
-    for (let i = -8; i <= 8; i++) {
-        const bottomX = centerX + i * 58;
-        ctx.beginPath();
-        ctx.moveTo(centerX + i * 3, horizon);
-        ctx.lineTo(bottomX, canvas.height + 10);
-        ctx.stroke();
-    }
-    const offset = (state.elapsed * 95) % 42;
-    for (let y = horizon + 12 + offset; y < canvas.height + 55; y += 42) {
-        const depth = (y - horizon) / (canvas.height - horizon);
-        const yy = horizon + (y - horizon) * (0.55 + depth * 0.45);
-        ctx.globalAlpha = 0.08 + depth * 0.12;
-        ctx.beginPath();
-        ctx.moveTo(0, yy);
-        ctx.lineTo(canvas.width, yy);
-        ctx.stroke();
-    }
-    ctx.restore();
-    ctx.globalAlpha = 1;
-
-    // Subtle illuminated side rails.
-    ctx.save();
-    ctx.shadowBlur = 14;
-    ctx.shadowColor = "#2bdfff";
-    ctx.strokeStyle = "rgba(50,205,255,.22)";
-    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(8, 430);
-    ctx.lineTo(8, canvas.height);
-    ctx.moveTo(canvas.width - 8, 430);
-    ctx.lineTo(canvas.width - 8, canvas.height);
+    ctx.ellipse(0, 0, 74, 22, 0, Math.PI * 1.05, Math.PI * 1.95);
     ctx.stroke();
     ctx.restore();
 
+    // Stars drift down at different speeds to create parallax.
     for (const f of state.floaters) {
-        ctx.globalAlpha = f.alpha;
-        ctx.fillStyle = "#8beeff";
-        ctx.shadowColor = "#4feaff";
-        ctx.shadowBlur = f.r * 4;
+        ctx.globalAlpha = f.alpha + Math.sin(state.elapsed * 2 + f.x) * .07;
+        ctx.fillStyle = "#b9efff";
+        ctx.shadowColor = "#63d9ff";
+        ctx.shadowBlur = f.r * 3;
         ctx.beginPath();
         ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
         ctx.fill();
@@ -435,158 +381,162 @@ function drawBackground() {
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
 
-    // Soft edge vignette adds contrast without an image asset.
-    const vignette = ctx.createRadialGradient(centerX, canvas.height * .48, 120, centerX, canvas.height * .48, 460);
+    // Faint flight-lane perspective lines.
+    ctx.save();
+    ctx.strokeStyle = "rgba(83,177,215,.075)";
+    ctx.lineWidth = 1;
+    const centerX = canvas.width / 2;
+    for (let i = -5; i <= 5; i++) {
+        ctx.beginPath();
+        ctx.moveTo(centerX + i * 4, 355);
+        ctx.lineTo(centerX + i * 73, canvas.height);
+        ctx.stroke();
+    }
+    const drift = (state.elapsed * 72) % 54;
+    for (let y = 365 + drift; y < canvas.height + 50; y += 54) {
+        ctx.globalAlpha = .08 + (y - 365) / canvas.height * .1;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+
+    // Edge vignette focuses attention on the rocket and incoming hazards.
+    const vignette = ctx.createRadialGradient(centerX, canvas.height * .48, 100, centerX, canvas.height * .48, 430);
     vignette.addColorStop(0, "rgba(0,0,0,0)");
-    vignette.addColorStop(1, "rgba(0,0,12,.48)");
+    vignette.addColorStop(1, "rgba(0,2,12,.68)");
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 function drawHero() {
     const moving = Math.min(1, Math.abs(player.vx) / player.maxSpeed);
-    const bob = Math.sin(player.idleT * (player.vx ? 10 : 5)) * (2 + moving * 2);
-    const lean = Math.max(-0.16, Math.min(0.16, player.vx / player.maxSpeed * 0.16));
+    const bob = Math.sin(player.idleT * 5) * 1.8;
+    const lean = Math.max(-.22, Math.min(.22, player.vx / player.maxSpeed * .22));
     const x = player.x;
     const y = player.y + bob;
 
     ctx.save();
-    ctx.translate(x, y);
+    ctx.translate(x, y - 7);
     ctx.rotate(lean);
 
-    // Ground shadow and coloured contact glow.
-    ctx.fillStyle = "rgba(0,0,0,.5)";
-    ctx.beginPath();
-    ctx.ellipse(0, 31, 26 + moving * 4, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
-    const aura = ctx.createRadialGradient(0, 26, 2, 0, 26, 39);
-    aura.addColorStop(0, "rgba(38,220,255,.22)");
-    aura.addColorStop(1, "rgba(38,220,255,0)");
+    // Blue engine aura and exhaust plume.
+    const aura = ctx.createRadialGradient(0, 34, 2, 0, 34, 48);
+    aura.addColorStop(0, "rgba(73,207,255,.22)");
+    aura.addColorStop(1, "rgba(73,207,255,0)");
     ctx.fillStyle = aura;
-    ctx.fillRect(-42, -8, 84, 76);
+    ctx.fillRect(-50, -5, 100, 90);
 
-    // Short cape / jacket tail.
-    ctx.fillStyle = "#9b3d9f";
+    const flameLength = 30 + Math.sin(player.idleT * 34) * 7 + moving * 10;
+    const flame = ctx.createLinearGradient(0, 35, 0, 35 + flameLength);
+    flame.addColorStop(0, "#eaffff");
+    flame.addColorStop(.25, "#75eaff");
+    flame.addColorStop(.65, "#398dff");
+    flame.addColorStop(1, "rgba(74,100,255,0)");
+    ctx.shadowColor = "#42cfff";
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = flame;
     ctx.beginPath();
-    ctx.moveTo(-12, 1);
-    ctx.quadraticCurveTo(-31, 15, -19, 34);
-    ctx.quadraticCurveTo(-7, 28, 2, 8);
-    ctx.fill();
-
-    // Legs and shoes.
-    const step = Math.sin(player.idleT * 13) * moving * 3;
-    const legGrad = ctx.createLinearGradient(0, 24, 0, 48);
-    legGrad.addColorStop(0, "#263b72");
-    legGrad.addColorStop(1, "#0b1536");
-    ctx.fillStyle = legGrad;
-    roundRect(-13, 20 + step, 10, 22, 4);
-    ctx.fill();
-    roundRect(3, 20 - step, 10, 22, 4);
-    ctx.fill();
-    ctx.fillStyle = "#0a1027";
-    roundRect(-15, 38 + step, 14, 7, 3);
-    ctx.fill();
-    roundRect(1, 38 - step, 14, 7, 3);
-    ctx.fill();
-
-    // Jacket body with shaded side panels.
-    const jacket = ctx.createLinearGradient(-18, -12, 18, 28);
-    jacket.addColorStop(0, "#8af7ff");
-    jacket.addColorStop(.32, "#2fd8f4");
-    jacket.addColorStop(1, "#0879b9");
-    ctx.shadowColor = "#20dfff";
-    ctx.shadowBlur = 17;
-    ctx.fillStyle = jacket;
-    roundRect(-18, -10, 36, 37, 11);
+    ctx.moveTo(-10, 34);
+    ctx.quadraticCurveTo(-13, 47, 0, 35 + flameLength);
+    ctx.quadraticCurveTo(13, 47, 10, 34);
+    ctx.closePath();
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "rgba(5,54,104,.45)";
-    roundRect(9, -5, 5, 27, 2);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(225,255,255,.65)";
-    ctx.lineWidth = 1;
+
+    // Rocket fins.
+    const finGrad = ctx.createLinearGradient(-26, 0, 26, 0);
+    finGrad.addColorStop(0, "#c65d4e");
+    finGrad.addColorStop(.5, "#ffb17a");
+    finGrad.addColorStop(1, "#a84948");
+    ctx.fillStyle = finGrad;
     ctx.beginPath();
-    ctx.moveTo(0, -5);
-    ctx.lineTo(0, 23);
+    ctx.moveTo(-12, 14);
+    ctx.lineTo(-29, 39);
+    ctx.lineTo(-25, 43);
+    ctx.lineTo(-4, 32);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(12, 14);
+    ctx.lineTo(29, 39);
+    ctx.lineTo(25, 43);
+    ctx.lineTo(4, 32);
+    ctx.closePath();
+    ctx.fill();
+
+    // Main rocket fuselage, pointed nose at the top.
+    const hull = ctx.createLinearGradient(-19, 0, 19, 0);
+    hull.addColorStop(0, "#6e879d");
+    hull.addColorStop(.22, "#d7e7ed");
+    hull.addColorStop(.52, "#f8ffff");
+    hull.addColorStop(.78, "#b7d0dc");
+    hull.addColorStop(1, "#536f89");
+    ctx.shadowColor = "#65dfff";
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = hull;
+    ctx.beginPath();
+    ctx.moveTo(0, -54);
+    ctx.bezierCurveTo(10, -43, 19, -20, 18, 8);
+    ctx.lineTo(14, 35);
+    ctx.lineTo(-14, 35);
+    ctx.lineTo(-18, 8);
+    ctx.bezierCurveTo(-19, -20, -10, -43, 0, -54);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Nose highlight and hull panels.
+    ctx.strokeStyle = "rgba(255,255,255,.75)";
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(-2, -45);
+    ctx.quadraticCurveTo(-13, -16, -11, 18);
     ctx.stroke();
+    ctx.fillStyle = "#f17d58";
+    ctx.fillRect(-17, 12, 34, 7);
+    ctx.fillStyle = "rgba(49,77,102,.45)";
+    ctx.fillRect(12, -7, 3, 17);
 
-    // Neck and face with dimensional skin shading.
-    const skin = ctx.createLinearGradient(-15, -49, 14, -10);
-    skin.addColorStop(0, "#ffe0be");
-    skin.addColorStop(.65, "#f5bd94");
-    skin.addColorStop(1, "#bd795f");
-    ctx.fillStyle = skin;
-    roundRect(-6, -25, 12, 13, 4);
-    ctx.fill();
+    // Glowing cockpit window.
+    const glass = ctx.createRadialGradient(-4, -22, 1, 0, -20, 15);
+    glass.addColorStop(0, "#d8ffff");
+    glass.addColorStop(.3, "#6be9ff");
+    glass.addColorStop(1, "#174d77");
+    ctx.fillStyle = glass;
     ctx.beginPath();
-    ctx.ellipse(0, -31, 16, 18, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -21, 9, 12, 0, 0, Math.PI * 2);
     ctx.fill();
-
-    // Hair silhouette.
-    ctx.fillStyle = "#10101b";
-    ctx.beginPath();
-    ctx.moveTo(-16, -34);
-    ctx.quadraticCurveTo(-18, -52, -3, -50);
-    ctx.quadraticCurveTo(8, -56, 16, -43);
-    ctx.lineTo(15, -34);
-    ctx.quadraticCurveTo(5, -40, -2, -37);
-    ctx.quadraticCurveTo(-10, -33, -16, -34);
-    ctx.fill();
-    ctx.fillStyle = "#383044";
-    ctx.beginPath();
-    ctx.ellipse(-5, -48, 6, 2, -.3, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Brows, eyes and signature moustache.
-    ctx.strokeStyle = "#38251f";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-10, -34); ctx.lineTo(-4, -35);
-    ctx.moveTo(4, -35); ctx.lineTo(10, -34);
-    ctx.stroke();
-    ctx.fillStyle = "#171522";
-    ctx.beginPath();
-    ctx.arc(-6, -30, 1.5, 0, Math.PI * 2);
-    ctx.arc(6, -30, 1.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#201820";
+    ctx.strokeStyle = "#52788e";
     ctx.lineWidth = 3;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(-10, -23);
-    ctx.quadraticCurveTo(-5, -18, 0, -22);
-    ctx.quadraticCurveTo(5, -18, 10, -23);
     ctx.stroke();
-    ctx.lineCap = "butt";
-
-    // Hero shades with bright reflective lenses.
-    ctx.fillStyle = "#090d1c";
-    roundRect(-13, -37, 11, 7, 2);
-    ctx.fill();
-    roundRect(2, -37, 11, 7, 2);
-    ctx.fill();
-    ctx.strokeStyle = "#53efff";
+    ctx.strokeStyle = "rgba(255,255,255,.8)";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(-12, -36); ctx.lineTo(-7, -36);
-    ctx.moveTo(3, -36); ctx.lineTo(8, -36);
-    ctx.stroke();
-    ctx.strokeStyle = "#101827";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-2, -34); ctx.lineTo(2, -34);
+    ctx.moveTo(-4, -27);
+    ctx.lineTo(-1, -31);
     ctx.stroke();
 
-    // Rim light around the complete character.
-    ctx.shadowColor = "#55efff";
-    ctx.shadowBlur = 12;
-    ctx.strokeStyle = "rgba(111,247,255,.72)";
+    // Engine nozzle.
+    ctx.fillStyle = "#263b50";
+    roundRect(-9, 30, 18, 10, 3);
+    ctx.fill();
+    ctx.strokeStyle = "#9eb9c8";
     ctx.lineWidth = 1.5;
-    roundRect(-20, -52, 40, 99, 15);
     ctx.stroke();
+
+    // Tiny navigation lights.
+    ctx.fillStyle = "#ffb078";
+    ctx.shadowColor = "#ff8e61";
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(-22, 34, 2, 0, Math.PI * 2);
+    ctx.arc(22, 34, 2, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
 }
-
 function drawHazard(h) {
     const glowColor = hazardGlowColor(h.type);
     // Fading motion trail.
@@ -815,7 +765,7 @@ soundToggle.addEventListener("click", () => {
     audio.init();
     if (audio.ctx.state === "suspended") audio.ctx.resume();
     input.soundOn = !input.soundOn;
-    soundToggle.textContent = input.soundOn ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+    soundToggle.querySelector("span:last-child").textContent = input.soundOn ? "SOUND ON" : "SOUND OFF";
 });
 
 // Initial UI setup
