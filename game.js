@@ -76,7 +76,7 @@ async function loadLeaderboard() {
         return;
     }
     leaderboardList.innerHTML = '<li class="leaderboard-empty">Loading pilot rankings…</li>';
-    const { data, error } = await supabaseClient.from("leaderboard").select("username,best_score").order("best_score", { ascending: false }).limit(10);
+    const { data, error } = await supabaseClient.from("leaderboard").select("username,high_score").order("high_score", { ascending: false }).limit(10);
     if (error) {
         leaderboardList.innerHTML = '<li class="leaderboard-empty">Could not load rankings. Check that the Supabase SQL setup completed.</li>';
         return;
@@ -93,7 +93,7 @@ async function loadLeaderboard() {
         name.className = "leaderboard-name";
         name.textContent = String(index + 1).padStart(2, "0") + "  " + (pilot.username || "Unknown Pilot");
         const score = document.createElement("strong");
-        score.textContent = Number(pilot.best_score || 0).toLocaleString();
+        score.textContent = Number(pilot.high_score || 0).toLocaleString();
         item.append(name, score);
         leaderboardList.append(item);
     });
