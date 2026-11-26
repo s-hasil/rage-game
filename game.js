@@ -64,6 +64,7 @@ function setAuthMode(mode) {
 }
 function renderAuthState() {
     const signedIn = Boolean(currentUser);
+    document.body.classList.toggle("authenticated", signedIn);
     playerStatus.textContent = signedIn ? (currentUser.user_metadata?.username || currentUser.email || "SIGNED IN").toUpperCase() : "GUEST PILOT";
     authForm.querySelectorAll("label, input, #authSubmit, #authModeToggle").forEach(el => { el.hidden = signedIn; });
     logoutBtn.hidden = !signedIn;
@@ -291,6 +292,11 @@ function setScreen(mode) {
 }
 
 function startGame() {
+    if (!currentUser) {
+        showAuthMessage("Sign in or create an account before launching a mission.", true);
+        document.getElementById("communityPanel")?.scrollIntoView({ behavior: "smooth" });
+        return;
+    }
     input.interacted = true;
     audio.resume().then(() => {
         if (state.running && input.soundOn) audio.startAmbience();
@@ -1036,6 +1042,12 @@ if (authForm) {
     logoutBtn.addEventListener("click", async () => {
         const { error } = await supabaseClient.auth.signOut();
         if (error) showAuthMessage(error.message, true);
+        else {
+            state.running = false;
+            state.gameOver = false;
+            setScreen("menu");
+            showAuthMessage("You have signed out. Sign in again to continue.");
+        }
     });
     document.getElementById("refreshLeaderboard").addEventListener("click", loadLeaderboard);
     initializeCommunity();
