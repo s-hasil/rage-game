@@ -104,6 +104,7 @@ function renderAuthState() {
     playerStatus.hidden = !signedIn;
     profileMenu.hidden = !signedIn;
     if (signedIn) refreshProfileUI();
+    document.body.classList.toggle("player-authenticated", signedIn);
     playerStatus.textContent = signedIn ? (currentUser.user_metadata?.username || currentUser.email || "SIGNED IN").toUpperCase() : ""; 
     communityTitle.innerHTML = signedIn ? 'THE <span>LEADERBOARD.</span>' : 'PILOT <span>ACCESS.</span>';
     communityIntro.textContent = signedIn ? "Your pilot account is active. Track your best runs and compare scores with the global community." : "Sign in or create your pilot account to unlock VOIDRUN.";
@@ -275,6 +276,9 @@ const state = {
     shake: 0,
     particles: [],
     hazards: [],
+    powerUps: [],
+    powerUpSpawnTimer: 0,
+    invulnerable: 0,
     floaters: [],
     lastTime: 0
 };
@@ -406,7 +410,7 @@ const audio = {
     swoosh() { this.beep({ freq: 620, type: "sine", dur: 0.12, gain: 0.12, slide: 1.65 }); }
 };
 
-const hazardTypes = ["meteor", "blade", "orb", "fireball", "drone"];
+const hazardTypes = ["meteor", "wreckage"];
 
 // Static skyline silhouettes are generated once to keep the render loop lightweight.
 // Star positions are generated once so the space scene stays smooth and inexpensive.
@@ -450,6 +454,9 @@ function startGame() {
     state.shake = 0;
     state.particles = [];
     state.hazards = [];
+    state.powerUps = [];
+    state.powerUpSpawnTimer = 7 + Math.random() * 8;
+    state.invulnerable = 0;
     state.floaters = createFloaters(34);
 
     player.x = canvas.width / 2;
@@ -551,6 +558,7 @@ function addParticles(x, y, color, count, spread = 1) {
 
 function updateHazards(dt) {
     const hitRadius = player.w * 0.34;
+    state.invulnerable = Math.max(0, state.invulnerable - dt);
 
     for (let i = state.hazards.length - 1; i >= 0; i--) {
         const h = state.hazards[i];
@@ -578,7 +586,7 @@ function updateHazards(dt) {
             addParticles(h.x, h.y, "#6ef9ff", 9, 0.65);
         }
 
-        if (dist < hitRadius + h.size * 0.55) {
+        if (dist < hitRadius + h.size * 0.55 && state.invulnerable <= 0) {
             state.slowMo = 0.3;
             state.shake = 13;
             addParticles(player.x, player.y - 14, "#ff625d", 42, 1.6);
@@ -612,6 +620,70 @@ function updateParticles(dt) {
             f.y = -5;
             f.x = Math.random() * canvas.width;
         }
+    }
+}
+
+
+function spawnPowerUp() {
+    if (state.powerUps.length || Math.random() > 0.32) return;
+    state.powerUps.push({
+        x: 34 + Math.random() * (canvas.width - 68),
+        y: -35,
+        size: 22,
+        speedY: 145 + Math.min(70, state.elapsed * 0.7),
+        pulse: Math.random() * Math.PI * 2
+    });
+}
+function updatePowerUps(dt) {
+    state.powerUpSpawnTimer -= dt;
+    if (state.powerUpSpawnTimer <= 0) {
+        spawnPowerUp();
+        state.powerUpSpawnTimer = 11 + Math.random() * 13;
+    }
+    for (let i = state.powerUps.length - 1; i >= 0; i--) {
+        const item = state.powerUps[i];
+        item.y += item.speedY * dt;
+        item.pulse += dt * 4;
+        if (Math.hypot(item.x - player.x, item.y - (player.y - 20)) < item.size + player.w * 0.38) {
+            state.invulnerable = 5;
+            addParticles(item.x, item.y, "#76fff2", 30, 1.25);
+            audio.ping();
+            state.powerUps.splice(i, 1);
+            continue;
+        }
+        if (item.y > canvas.height + 35) state.powerUps.splice(i, 1);
+    }
+}
+function drawPowerUps() {
+    for (const item of state.powerUps) {
+        const pulse = 1 + Math.sin(item.pulse) * 0.12;
+        ctx.save();
+        ctx.translate(item.x, item.y);
+        ctx.scale(pulse, pulse);
+        ctx.globalCompositeOperation = "lighter";
+        ctx.shadowColor = "#62fff0";
+        ctx.shadowBlur = 25;
+        const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, item.size * 1.5);
+        glow.addColorStop(0, "rgba(255,255,255,.98)");
+        glow.addColorStop(.28, "rgba(100,255,240,.9)");
+        glow.addColorStop(1, "rgba(30,180,255,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(0, 0, item.size * 1.5, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#aafffa";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(0, 0, item.size * .72, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.moveTo(0, -item.size * .48);
+        ctx.lineTo(item.size * .13, -item.size * .12);
+        ctx.lineTo(item.size * .43, 0);
+        ctx.lineTo(item.size * .13, item.size * .12);
+        ctx.lineTo(0, item.size * .48);
+        ctx.lineTo(-item.size * .13, item.size * .12);
+        ctx.lineTo(-item.size * .43, 0);
+        ctx.lineTo(-item.size * .13, -item.size * .12);
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
     }
 }
 
@@ -872,8 +944,8 @@ function drawHazard(h) {
     ctx.shadowColor = glowColor;
     ctx.shadowBlur = 15;
 
-    if (h.type === "drone") {
-        drawDroneHazard(h.size);
+    if (h.type === "wreckage") {
+        drawBrokenRocket(h.size);
     } else if (h.type === "meteor") {
         const rock = ctx.createRadialGradient(-h.size * .14, -h.size * .18, 2, 0, 0, h.size * .5);
         rock.addColorStop(0, "#fff0bd");
@@ -958,6 +1030,26 @@ function drawHazard(h) {
 }
 
 
+
+function drawBrokenRocket(size) {
+    ctx.save();
+    ctx.scale(size / 38, size / 38);
+    ctx.fillStyle = "#263c59";
+    ctx.strokeStyle = "#b9eaff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-11, -25); ctx.lineTo(9, -18); ctx.lineTo(14, 5);
+    ctx.lineTo(5, 22); ctx.lineTo(-12, 14); ctx.lineTo(-17, -4); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#f28b55";
+    ctx.beginPath(); ctx.moveTo(-12, 10); ctx.lineTo(-27, 24); ctx.lineTo(-5, 19); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(9, -8); ctx.lineTo(27, -20); ctx.lineTo(15, 1); ctx.fill();
+    ctx.fillStyle = "#6deaff";
+    ctx.shadowColor = "#6deaff"; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(0, -7, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+}
+
 function drawDroneHazard(size) {
     // Compact hostile interceptor: swept wings, armored fuselage and twin engine glow.
     ctx.save();
@@ -1012,6 +1104,7 @@ function drawDroneHazard(size) {
 }
 
 function hazardGlowColor(type) {
+    if (type === "wreckage") return "#ffad70";
     if (type === "drone") return "#70eaff";
     if (type === "meteor") return "#ff9f59";
     if (type === "blade") return "#b7e1ff";
@@ -1040,7 +1133,16 @@ function draw() {
 
     drawBackground();
     for (const h of state.hazards) drawHazard(h);
+    drawPowerUps();
     drawHero();
+    if (state.invulnerable > 0) {
+        ctx.save();
+        ctx.globalAlpha = .55 + Math.sin(state.elapsed * 12) * .18;
+        ctx.strokeStyle = "#79fff3"; ctx.lineWidth = 3;
+        ctx.shadowColor = "#5cfff1"; ctx.shadowBlur = 24;
+        ctx.beginPath(); ctx.ellipse(player.x, player.y - 18, 43, 55, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+    }
     drawParticles();
 
     ctx.restore();
@@ -1062,6 +1164,7 @@ function loop(ts) {
         updatePlayer(dt);
         updateDifficulty(dt);
         updateHazards(dt);
+        updatePowerUps(dt);
         updateParticles(dt);
         updateScoreDisplays();
     } else {
