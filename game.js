@@ -886,6 +886,10 @@ menuBtn.addEventListener("click", () => {
     setScreen("menu");
 });
 
+document.addEventListener("pointerdown", () => {
+    if (input.soundOn && !state.running) audio.startAmbience();
+}, { once: true });
+
 soundToggle.addEventListener("click", () => {
     input.interacted = true;
     audio.setEnabled(!input.soundOn);
