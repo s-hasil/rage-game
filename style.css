@@ -481,13 +481,14 @@ body.player-authenticated .community-panel .leaderboard-note { display:none; }
 }
 
 
-/* Viewport-first game layout: size the portrait canvas from available height, not a small fixed width. */
-html, body { min-height:100%; }
+/* True responsive playfield: use the visible viewport and adapt the canvas world height to match. */
+html, body { width:100%; min-height:100%; }
 body.playing {
-  min-height:100svh;
-  height:100svh;
+  width:100%;
+  height:100dvh;
+  min-height:0;
   overflow:hidden;
-  padding:0 10px 8px;
+  padding:0 8px;
 }
 body.playing .app {
   width:100%;
@@ -497,13 +498,14 @@ body.playing .app {
   display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:flex-start;
 }
 body.playing .topbar,
 body.playing .site-footer,
-body.playing #menuScreen { display:none !important; }
+body.playing #menuScreen,
+body.playing .community-panel { display:none !important; }
 body.playing .game-section {
   display:flex !important;
+  flex:1 1 auto;
   flex-direction:column;
   align-items:center;
   justify-content:flex-start;
@@ -511,66 +513,56 @@ body.playing .game-section {
   max-width:100%;
   min-height:0;
   margin:0 auto;
-  flex:1 1 auto;
 }
 body.playing .game-heading {
-  width:min(620px,100%);
-  flex:0 0 24px;
-  min-height:24px;
-  margin:0 auto 5px;
-  font-size:clamp(7px,.75vw,9px);
+  flex:0 0 25px;
+  width:min(760px,100%);
+  min-height:25px;
+  margin:0 auto 4px;
+  font-size:clamp(7px,.8vw,10px);
 }
 body.playing .game-shell {
-  flex:0 1 auto;
+  flex:1 1 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   width:fit-content;
   max-width:100%;
   min-height:0;
   margin:0 auto;
   padding:6px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
 }
 body.playing canvas#game {
   display:block;
-  width:min(560px, calc((100svh - 78px) * .6), calc(100vw - 32px));
-  height:auto;
+  width:min(680px, calc((100dvh - 115px) * .72), calc(100vw - 28px));
+  height:calc(100dvh - 115px);
   max-width:100%;
-  max-height:calc(100svh - 78px);
-  aspect-ratio:3 / 5;
+  max-height:100%;
+  aspect-ratio:auto;
   margin:0 auto;
-  object-fit:contain;
+  object-fit:fill;
 }
-body.playing .game-footer {
-  width:min(620px,100%);
-  flex:0 0 20px;
-  padding:5px 2px 0;
-  font-size:7px;
-}
+body.playing .game-footer { display:none; }
 body.playing .hud { top:14px; left:14px; right:14px; }
 body.playing .flight-status { top:68px; left:15px; }
 body.playing .gameover-screen { inset:6px; }
 
 @media (max-width:760px) {
-  body.playing { padding:0 5px max(5px,env(safe-area-inset-bottom)); }
-  body.playing .game-section { margin:0 auto; }
+  body.playing { padding:0 4px max(4px,env(safe-area-inset-bottom)); }
   body.playing .game-heading {
     flex-basis:22px;
     min-height:22px;
-    margin-bottom:3px;
+    margin-bottom:2px;
     padding:0 5px;
     font-size:6px;
   }
   body.playing .game-heading-right { font-size:6px; }
   body.playing .game-shell { padding:4px; }
   body.playing canvas#game {
-    width:min(480px, calc((100svh - 62px) * .6), calc(100vw - 18px));
-    max-height:calc(100svh - 62px);
-  }
-  body.playing .game-footer {
-    flex-basis:17px;
-    padding-top:4px;
-    font-size:5px;
+    width:calc(100vw - 20px);
+    height:calc(100dvh - 112px);
+    max-width:100%;
+    max-height:100%;
   }
   body.playing .hud { top:10px; left:10px; right:10px; gap:4px; }
   body.playing .hud-card { min-width:0; padding:6px 7px; }
@@ -581,11 +573,9 @@ body.playing .gameover-screen { inset:6px; }
   body.playing .touch-btn { width:56px; height:56px; }
 }
 @media (max-height:560px) and (orientation:landscape) {
-  body.playing { padding:0 6px 4px; }
-  body.playing .game-heading { flex-basis:17px; min-height:17px; margin-bottom:2px; }
   body.playing canvas#game {
-    width:min(440px, calc((100svh - 45px) * .6), calc(100vw - 20px));
-    max-height:calc(100svh - 45px);
+    width:min(calc((100dvh - 70px) * .72), calc(100vw - 20px));
+    height:calc(100dvh - 70px);
   }
-  body.playing .game-footer { display:none; }
+  body.playing .game-heading { flex-basis:18px; min-height:18px; margin-bottom:1px; }
 }
