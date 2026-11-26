@@ -277,7 +277,7 @@ const state = {
     particles: [],
     hazards: [],
     powerUps: [],
-    powerUpSpawnTimer: 0,
+    nextPowerUpScore: 30,
     invulnerable: 0,
     floaters: [],
     lastTime: 0
@@ -455,7 +455,7 @@ function startGame() {
     state.particles = [];
     state.hazards = [];
     state.powerUps = [];
-    state.powerUpSpawnTimer = 7 + Math.random() * 8;
+    state.nextPowerUpScore = 30;
     state.invulnerable = 0;
     state.floaters = createFloaters(34);
 
@@ -625,7 +625,7 @@ function updateParticles(dt) {
 
 
 function spawnPowerUp() {
-    if (state.powerUps.length || Math.random() > 0.32) return;
+    if (state.powerUps.length) return;
     state.powerUps.push({
         x: 34 + Math.random() * (canvas.width - 68),
         y: -35,
@@ -635,10 +635,11 @@ function spawnPowerUp() {
     });
 }
 function updatePowerUps(dt) {
-    state.powerUpSpawnTimer -= dt;
-    if (state.powerUpSpawnTimer <= 0) {
+    // Guaranteed spawn at 30, 60, 90... points. If one is already
+    // on screen, hold the next threshold until that pickup is cleared.
+    if (state.score >= state.nextPowerUpScore && state.powerUps.length === 0) {
         spawnPowerUp();
-        state.powerUpSpawnTimer = 11 + Math.random() * 13;
+        state.nextPowerUpScore += 30;
     }
     for (let i = state.powerUps.length - 1; i >= 0; i--) {
         const item = state.powerUps[i];
