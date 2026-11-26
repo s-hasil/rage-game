@@ -115,13 +115,16 @@ const audio = {
 const hazardTypes = ["meteor", "blade", "orb", "fireball"];
 
 // Static skyline silhouettes are generated once to keep the render loop lightweight.
-const cityBuildings = Array.from({ length: 24 }, (_, i) => ({
-    x: i * 19 - 5,
-    w: 13 + Math.random() * 13,
-    h: 48 + Math.random() * 116,
-    hue: Math.random() > 0.5 ? "cyan" : "violet",
-    windows: Array.from({ length: 7 }, () => Math.random() > 0.42)
-}));
+const cityBuildings = Array.from({ length: 24 }, (_, i) => {
+    const height = 48 + Math.random() * 116;
+    return {
+        x: i * 19 - 5,
+        w: 13 + Math.random() * 13,
+        h: height,
+        hue: Math.random() > 0.5 ? "cyan" : "violet",
+        windows: Array.from({ length: Math.max(2, Math.floor((height - 14) / 12)) }, () => Math.random() > 0.42)
+    };
+});
 
 function updateScoreDisplays() {
     scoreValue.textContent = Math.floor(state.score);
