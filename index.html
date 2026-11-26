@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=voidrun-auth-gate-1" />
+    <link rel="stylesheet" href="style.css?v=voidrun-auth-google-2" />
 </head>
 <body>
     <div class="space-noise" aria-hidden="true"></div>
@@ -71,6 +71,11 @@
                     <label class="auth-label" for="authPassword">PASSWORD</label>
                     <input id="authPassword" class="auth-input" type="password" minlength="6" placeholder="At least 6 characters" autocomplete="current-password" required />
                     <button id="authSubmit" class="auth-submit" type="submit">SIGN IN</button>
+                    <div class="auth-divider"><span>OR CONTINUE WITH</span></div>
+                    <button id="googleAuthBtn" class="google-auth-btn" type="button">
+                        <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 3.08 13.22l7.98 6.19C12.95 13.72 18.03 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.91c-.58 2.96-2.26 5.48-4.73 7.18l7.24 5.62c4.23-3.91 6.56-9.68 6.56-17.27Z"/><path fill="#FBBC05" d="M11.06 28.59A14.4 14.4 0 0 1 10.3 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.88.93 7.55 3.08 10.78l7.98-6.19Z"/><path fill="#34A853" d="M24 48c6.47 0 11.9-2.13 15.87-6.18l-7.24-5.62c-2.01 1.35-4.59 2.15-8.63 2.15-5.97 0-11.05-4.22-12.94-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"/></svg>
+                        <span>CONTINUE WITH GOOGLE</span>
+                    </button>
                     <button id="authModeToggle" class="auth-switch" type="button">NEW PILOT? CREATE ACCOUNT</button>
                     <button id="logoutBtn" class="auth-switch logout-btn" type="button" hidden>SIGN OUT</button>
                     <p id="authMessage" class="auth-message" role="status">Sign in or create an account to save your high scores.</p>
@@ -122,6 +127,6 @@
         <footer class="site-footer"><span>VOIDRUN <b>—</b> A LITTLE ARCADE PROJECT</span><span>BUILT TO BE PLAYED, NOT TAKEN SERIOUSLY.</span></footer>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="game.js?v=voidrun-auth-gate-1"></script>
+    <script src="game.js?v=voidrun-auth-google-2"></script>
 </body>
 </html>
