@@ -332,3 +332,5 @@ canvas {
  .community-top { align-items:flex-start; flex-direction:column; }
  .community-grid { grid-template-columns:1fr; }
 }
+
+body.playing .community-panel { display:none !important; }
