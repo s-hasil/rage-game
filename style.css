@@ -72,9 +72,8 @@ h1 span, .gameover-screen h2 span { color: transparent; -webkit-text-stroke: 1px
 .launch-btn { min-width: 205px; min-height: 52px; display: inline-flex; align-items: center; justify-content: space-between; gap: 28px; padding: 0 17px 0 20px; color: #06121d; background: linear-gradient(105deg, #8cf4ef, #70cfff); border: 0; border-radius: 5px; font: 800 12px "DM Mono", monospace; letter-spacing: .07em; cursor: pointer; box-shadow: 0 8px 32px rgba(70,205,235,.16); transition: transform .18s ease, box-shadow .18s ease; }
 .launch-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(70,205,235,.28); }
 .launch-arrow { font-size: 20px; line-height: 1; }
-.support-link { color: #9ba8be; text-decoration: none; font: 9px "DM Mono", monospace; letter-spacing: .08em; }
-.support-link span { color: var(--orange); padding-left: 5px; }
-.support-link:hover { color: white; }
+.support-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; padding: 0 13px; border-radius: 6px; background: #ffdd00; color: #171717; text-decoration: none; font: 700 11px Manrope, sans-serif; letter-spacing: 0; transition: background .18s ease, transform .18s ease; }
+.support-link:hover { background: #ffe64d; color: #171717; transform: translateY(-1px); }
 .controls-note { display: flex; align-items: center; gap: 6px; margin-top: 25px; color: #6e7c96; font-size: 8px; }
 .keycap { display: inline-grid; min-width: 18px; height: 19px; place-items: center; padding: 0 4px; border: 1px solid #34435d; border-radius: 3px; color: #aab9d0; font-size: 9px; }
 .controls-divider { width: 1px; height: 14px; margin: 0 8px; background: #354159; }
