@@ -180,28 +180,94 @@ async function loadLeaderboard() {
         leaderboardList.innerHTML = '<li class="leaderboard-empty">Leaderboard service could not load. Refresh the page.</li>';
         return;
     }
-    leaderboardList.innerHTML = '<li class="leaderboard-empty">Loading pilot rankings…</li>';
-    const { data, error } = await supabaseClient.from("leaderboard").select("username,high_score").order("high_score", { ascending: false }).limit(10);
+    leaderboardList.innerHTML = '<li class="leaderboard-empty">Loading top 10 pilots…</li>';
+    const { data, error } = await supabaseClient.from("leaderboard")
+        .select("user_id,username,high_score")
+        .order("high_score", { ascending: false })
+        .limit(10);
     if (error) {
         leaderboardList.innerHTML = '<li class="leaderboard-empty">Could not load rankings. Check that the Supabase SQL setup completed.</li>';
         return;
     }
-    if (!data?.length) {
+
+    const pilots = data || [];
+    const profileIds = pilots.map(pilot => pilot.user_id).filter(Boolean);
+    let avatarById = {};
+    if (profileIds.length) {
+        const { data: profiles } = await supabaseClient.from("profiles")
+            .select("id,avatar_url")
+            .in("id", profileIds);
+        (profiles || []).forEach(profile => { avatarById[profile.id] = profile.avatar_url || ""; });
+    }
+
+    leaderboardList.innerHTML = "";
+    if (!pilots.length) {
         leaderboardList.innerHTML = '<li class="leaderboard-empty">No scores yet. Be the first pilot on the board.</li>';
+    } else {
+        pilots.forEach((pilot, index) => {
+            const item = document.createElement("li");
+            item.className = "leaderboard-entry";
+
+            const rank = document.createElement("span");
+            rank.className = "leaderboard-rank";
+            rank.textContent = String(index + 1);
+
+            const avatar = document.createElement("span");
+            avatar.className = "leaderboard-avatar";
+            const avatarUrl = avatarById[pilot.user_id];
+            if (avatarUrl) {
+                const image = document.createElement("img");
+                image.src = avatarUrl;
+                image.alt = "";
+                image.loading = "lazy";
+                avatar.append(image);
+            } else {
+                avatar.textContent = (pilot.username || "P").trim().charAt(0).toUpperCase();
+            }
+
+            const name = document.createElement("span");
+            name.className = "leaderboard-player";
+            name.textContent = pilot.username || "Unknown Pilot";
+
+            const score = document.createElement("strong");
+            score.textContent = Number(pilot.high_score || 0).toLocaleString();
+            item.append(rank, avatar, name, score);
+            leaderboardList.append(item);
+        });
+    }
+
+    const profileName = document.getElementById("leaderboardProfileName");
+    const profileAvatar = document.getElementById("leaderboardProfileAvatar");
+    const profileFallback = document.getElementById("leaderboardProfileFallback");
+    const profileRank = document.getElementById("leaderboardProfileRank");
+    const profileScore = document.getElementById("leaderboardProfileScore");
+    if (!currentUser) {
+        profileName.textContent = "Sign in to view your card";
+        profileAvatar.hidden = true;
+        profileFallback.hidden = false;
+        profileFallback.textContent = "P";
+        profileRank.textContent = "—";
+        profileScore.textContent = "—";
         return;
     }
-    leaderboardList.innerHTML = "";
-    data.forEach((pilot, index) => {
-        const item = document.createElement("li");
-        item.className = "leaderboard-entry";
-        const name = document.createElement("span");
-        name.className = "leaderboard-name";
-        name.textContent = String(index + 1).padStart(2, "0") + "  " + (pilot.username || "Unknown Pilot");
-        const score = document.createElement("strong");
-        score.textContent = Number(pilot.high_score || 0).toLocaleString();
-        item.append(name, score);
-        leaderboardList.append(item);
-    });
+
+    const { data: ownProfile } = await supabaseClient.from("profiles")
+        .select("username,avatar_url")
+        .eq("id", currentUser.id)
+        .maybeSingle();
+    const ownName = ownProfile?.username || currentPilotName();
+    const ownAvatar = ownProfile?.avatar_url || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || "";
+    profileName.textContent = ownName;
+    profileFallback.textContent = ownName.trim().charAt(0).toUpperCase() || "P";
+    profileAvatar.hidden = !ownAvatar;
+    profileFallback.hidden = Boolean(ownAvatar);
+    if (ownAvatar) profileAvatar.src = ownAvatar;
+    else profileAvatar.removeAttribute("src");
+
+    const ownRank = pilots.findIndex(pilot => pilot.user_id === currentUser.id);
+    const ownLeaderboardRow = ownRank >= 0 ? pilots[ownRank] : null;
+    profileRank.textContent = ownLeaderboardRow ? "#" + (ownRank + 1) : "—";
+    profileScore.textContent = ownLeaderboardRow ? Number(ownLeaderboardRow.high_score || 0).toLocaleString() : "—";
 }
 async function saveRunScore(score) {
     if (!supabaseClient || !currentUser || score <= 0) return;
