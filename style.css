@@ -869,3 +869,8 @@ body[data-control-mode="tilt"] .touch-controls { display:none !important; }
  body.playing .pause-btn { top:8px; right:8px; width:42px; height:42px; }
  .pause-card { padding:18px; }
 }
+
+/* Minimal, reliable in-game pause control */
+.pause-btn { position:absolute !important; z-index:30 !important; top:14px !important; right:14px !important; width:48px !important; height:48px !important; min-width:48px; min-height:48px; display:grid !important; place-items:center !important; padding:0 !important; border:2px solid rgba(120,235,255,.9) !important; border-radius:12px !important; color:#e8fcff !important; background:rgba(3,13,29,.94) !important; font:800 22px/1 Arial,sans-serif !important; box-shadow:0 0 0 3px rgba(80,210,255,.12),0 0 22px rgba(80,220,255,.45) !important; cursor:pointer; touch-action:manipulation; }
+.pause-btn:active { transform:scale(.94); }
+@media(max-width:760px) { .pause-btn { top:12px !important; right:12px !important; width:48px !important; height:48px !important; } }
