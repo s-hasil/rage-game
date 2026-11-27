@@ -359,7 +359,7 @@ const state = {
     hazards: [],
     powerUps: [],
     nextShieldPowerUpScore: 30,
-    nextSpeedPowerUpScore: 15,
+    nextSpeedPowerUpScore: 45,
     pendingPowerUps: [],
     powerUpAlert: null,
     speedBoost: 0,
@@ -543,7 +543,7 @@ function startGame() {
     state.hazards = [];
     state.powerUps = [];
     state.nextShieldPowerUpScore = 30;
-    state.nextSpeedPowerUpScore = 15;
+    state.nextSpeedPowerUpScore = 45;
     state.pendingPowerUps = [];
     state.powerUpAlert = null;
     state.speedBoost = 0;
@@ -775,9 +775,7 @@ function updatePowerUps(dt) {
     while (state.score >= Math.min(state.nextShieldPowerUpScore, state.nextSpeedPowerUpScore)) {
         if (state.nextSpeedPowerUpScore < state.nextShieldPowerUpScore) {
             state.pendingPowerUps.push("speed");
-            state.nextSpeedPowerUpScore = state.nextSpeedPowerUpScore === 15
-                ? 25
-                : state.nextSpeedPowerUpScore + 20;
+            state.nextSpeedPowerUpScore += 60;
         } else {
             state.pendingPowerUps.push("shield");
             state.nextShieldPowerUpScore += 30;
