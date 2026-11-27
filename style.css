@@ -326,6 +326,9 @@ canvas {
 .auth-switch { display:block; margin:13px auto 0; border:0; color:#9eacc2; background:transparent; font:8px "DM Mono",monospace; letter-spacing:.06em; cursor:pointer; }
 .auth-message { min-height:30px; margin-top:15px; color:#83cfd8; font-size:10px; line-height:1.6; }
 .auth-message.error { color:#ff9b87; }
+.auth-resend-btn { display:block; margin:8px 0 0; padding:9px 12px; border:1px solid rgba(111,220,255,.35); border-radius:4px; color:#8cecf4; background:rgba(16,42,65,.7); font:700 9px "DM Mono",monospace; letter-spacing:.06em; cursor:pointer; }
+.auth-resend-btn[hidden] { display:none; }
+.auth-resend-btn:disabled { opacity:.55; cursor:wait; }
 .logout-btn { color:var(--orange); }
 .leaderboard-heading { display:flex; align-items:center; justify-content:space-between; }
 .leaderboard-heading .stat-label { display:block; margin-bottom:5px; }
