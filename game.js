@@ -695,6 +695,10 @@ function updateHazards(dt) {
 
     for (let i = state.hazards.length - 1; i >= 0; i--) {
         const h = state.hazards[i];
+        // Keep the previous position so fast meteors cannot tunnel through the rocket
+        // between animation frames.
+        const previousX = h.x;
+        const previousY = h.y;
         h.y += h.speedY * dt;
         h.x += h.driftX * dt;
         h.rotation += h.spin * dt;
@@ -704,16 +708,28 @@ function updateHazards(dt) {
         h.trail.push({ x: h.x, y: h.y, alpha: 0.45 });
         if (h.trail.length > 8) h.trail.shift();
 
-        const dx = h.x - player.x;
-        const dy = h.y - (player.y - 20);
-        // Elliptical hitbox follows the visible rocket body, not just its centre.
-        // This prevents hazards visibly overlapping the rocket from slipping through.
-        const collisionX = player.w * 0.46 + h.size * 0.42;
-        const collisionY = player.h * 0.34 + h.size * 0.42;
+        // Test the full meteor path against a generous ellipse covering the visible
+        // rocket body. Closest-point-on-segment prevents missed high-speed collisions.
+        const targetX = player.x;
+        const targetY = player.y - 22;
+        const segmentX = h.x - previousX;
+        const segmentY = h.y - previousY;
+        const segmentLengthSq = segmentX * segmentX + segmentY * segmentY;
+        const along = segmentLengthSq > 0
+            ? Math.max(0, Math.min(1, ((targetX - previousX) * segmentX + (targetY - previousY) * segmentY) / segmentLengthSq))
+            : 1;
+        const closestX = previousX + segmentX * along;
+        const closestY = previousY + segmentY * along;
+        const dx = closestX - targetX;
+        const dy = closestY - targetY;
+        const collisionX = player.w * 0.62 + h.size * 0.58;
+        const collisionY = player.h * 0.48 + h.size * 0.58;
         const overlapsRocket = (dx * dx) / (collisionX * collisionX) +
             (dy * dy) / (collisionY * collisionY) <= 1;
 
-        if (overlapsRocket && state.invulnerable <= 0 && state.shieldFade <= 0) {
+        // Only the actual timed shield grants immunity. shieldFade is a visual
+        // fade-out and must never provide extra invulnerability.
+        if (overlapsRocket && state.invulnerable <= 0) {
             state.slowMo = 0.3;
             state.shake = 13;
             addParticles(player.x, player.y - 14, "#ff625d", 42, 1.6);
