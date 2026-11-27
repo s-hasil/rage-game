@@ -88,11 +88,24 @@
                     <p id="authMessage" class="auth-message" role="status">Sign in or create an account to save your high scores.</p>
                 </form>
                 <div class="leaderboard-card gate-leaderboard">
-                    <div class="leaderboard-heading"><div><span class="stat-label">GLOBAL RANKINGS</span><h3>TOP PILOTS</h3></div><button id="refreshLeaderboard" class="refresh-btn" type="button" aria-label="Refresh leaderboard">↻</button></div>
-                    <div class="leaderboard-columns"><span>RANK / PILOT</span><span>BEST SCORE</span></div>
+                    <div class="leaderboard-heading"><div><span class="stat-label">GLOBAL RANKINGS</span><h3>TOP 10 PILOTS</h3></div><button id="refreshLeaderboard" class="refresh-btn" type="button" aria-label="Refresh leaderboard">↻</button></div>
+                    <div class="leaderboard-columns"><span>RANK / PLAYER</span><span>HIGH SCORE</span></div>
                     <ol id="leaderboardList" class="leaderboard-list"><li class="leaderboard-empty">Loading leaderboard…</li></ol>
-                    <p class="leaderboard-note">Only your best recorded run is shown. Sign in to add your score.</p>
+                    <p class="leaderboard-note">Showing the 10 highest-scoring players. Only public player names, avatars and scores appear here.</p>
                 </div>
+                <aside class="leaderboard-profile-card" aria-label="Your leaderboard profile">
+                    <span class="stat-label">YOUR PLAYER CARD</span>
+                    <h3>Your Profile</h3>
+                    <div class="leaderboard-profile-identity">
+                        <div class="leaderboard-profile-avatar"><img id="leaderboardProfileAvatar" alt="" hidden /><span id="leaderboardProfileFallback">P</span></div>
+                        <div class="leaderboard-profile-details"><strong id="leaderboardProfileName">Pilot</strong><small>ASTRIXAL PLAYER</small></div>
+                    </div>
+                    <div class="leaderboard-profile-stats">
+                        <div><strong id="leaderboardProfileRank">—</strong><span>YOUR RANK</span></div>
+                        <div><strong id="leaderboardProfileScore">0</strong><span>HIGH SCORE</span></div>
+                    </div>
+                    <p class="leaderboard-profile-note">Your personal best and position in the global rankings.</p>
+                </aside>
             </div>
         </section>
 
