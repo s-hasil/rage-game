@@ -797,3 +797,14 @@ body.player-authenticated .community-panel .leaderboard-profile-card {
     padding:22px 18px !important;
   }
 }
+
+
+/* Final account-state visibility rules: the personal card is never part of login. */
+body:not(.authenticated) #communityPanel .leaderboard-profile-card {
+  display:none !important;
+  visibility:hidden !important;
+}
+body.player-authenticated #communityPanel .leaderboard-profile-card {
+  display:block !important;
+  visibility:visible !important;
+}
