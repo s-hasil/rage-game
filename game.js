@@ -21,6 +21,15 @@ const finalBest = document.getElementById("finalBest");
 
 const leftBtn = document.getElementById("leftBtn");
 const rightBtn = document.getElementById("rightBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+const pauseOverlay = document.getElementById("pauseOverlay");
+const resumeBtn = document.getElementById("resumeBtn");
+const splitTouchZone = document.getElementById("splitTouchZone");
+const controlModeInputs = [...document.querySelectorAll('input[name="controlMode"]')];
+const CONTROL_MODE_KEY = "astrixalControlMode";
+let controlMode = ["buttons", "split", "tilt"].includes(localStorage.getItem(CONTROL_MODE_KEY)) ? localStorage.getItem(CONTROL_MODE_KEY) : "buttons";
+let tiltPermissionGranted = false;
+let tiltGamma = 0;
 
 const STORAGE_KEY = "heroRushHighScore";
 
@@ -78,6 +87,7 @@ async function signOutPlayer() {
     const { error } = await supabaseClient.auth.signOut();
     if (error) { showAuthMessage(error.message, true); showProfileMessage(error.message, true); return; }
     state.running = false;
+    state.paused = false;
     state.gameOver = false;
     profileScreen.hidden = true;
     profileDropdown.hidden = true;
@@ -346,6 +356,7 @@ async function initializeCommunity() {
 
 const state = {
     running: false,
+    paused: false,
     gameOver: false,
     score: 0,
     combo: 1,
@@ -516,6 +527,7 @@ function setScreen(mode) {
     document.body.classList.toggle("playing", mode !== "menu");
     input.left = false;
     input.right = false;
+    if (pauseOverlay) pauseOverlay.hidden = true;
 }
 
 function startGame() {
@@ -530,7 +542,9 @@ function startGame() {
     }).catch(() => {});
 
     state.running = true;
+    state.paused = false;
     state.gameOver = false;
+    if (pauseOverlay) pauseOverlay.hidden = true;
     state.score = 0;
     state.combo = 1;
     state.nearMissStreak = 0;
@@ -561,6 +575,8 @@ function startGame() {
 
 function endGame() {
     state.running = false;
+    state.paused = false;
+    if (pauseOverlay) pauseOverlay.hidden = true;
     state.gameOver = true;
     audio.hit();
     audio.gameOver();
@@ -593,46 +609,15 @@ function createFloaters(count) {
     return arr;
 }
 
-function findSafeHazardSpawn(size, speedY) {
-    const spawnY = -70;
-    const targetY = player.y - 20;
-    const arrivalTime = (targetY - spawnY) / speedY;
-    const margin = Math.max(42, size + player.w * 0.55 + 22);
-    const minX = 20 + size;
-    const maxX = canvas.width - 20 - size;
-    const candidates = [];
-    const steps = 18;
-
-    for (let i = 0; i <= steps; i++) {
-        const x = minX + (maxX - minX) * (i / steps);
-        if (Math.abs(x - player.x) > player.maxSpeed * arrivalTime + margin) continue;
-
-        let safe = true;
-        for (const hazard of state.hazards) {
-            const timeToPlayer = (targetY - hazard.y) / Math.max(1, hazard.speedY);
-            if (timeToPlayer < 0 || Math.abs(timeToPlayer - arrivalTime) > 0.48) continue;
-            const predictedX = Math.max(12, Math.min(canvas.width - 12,
-                hazard.x + hazard.driftX * Math.max(0, arrivalTime)));
-            const requiredGap = margin + hazard.size * 0.72;
-            if (Math.abs(x - predictedX) < requiredGap) {
-                safe = false;
-                break;
-            }
-        }
-        if (safe) candidates.push(x);
-    }
-
-    if (!candidates.length) return null;
-    return candidates[(Math.random() * candidates.length) | 0];
-}
-
 function spawnHazard() {
     const progress = Math.min(1, state.score / 120);
     const type = hazardTypes[(Math.random() * hazardTypes.length) | 0];
     const size = 26 + Math.random() * 24;
     const speedY = 210 + Math.random() * 110 + progress * 160;
-    const x = findSafeHazardSpawn(size, speedY);
-    if (x === null) return false;
+    const minX = size + 8;
+    const maxX = canvas.width - size - 8;
+    // Spawn across the entire playable width; avoid repeatedly favouring the centre.
+    const x = minX + Math.random() * Math.max(1, maxX - minX);
 
     state.hazards.push({
         type,
@@ -653,8 +638,12 @@ function updatePlayer(dt) {
     player.idleT += dt;
 
     let dir = 0;
-    if (input.left) dir -= 1;
-    if (input.right) dir += 1;
+    if (controlMode === "tilt") {
+        dir = Math.abs(tiltGamma) < 3 ? 0 : Math.max(-1, Math.min(1, tiltGamma / 18));
+    } else {
+        if (input.left) dir -= 1;
+        if (input.right) dir += 1;
+    }
 
     if (dir !== 0) {
         player.vx += dir * player.accel * dt;
@@ -1384,7 +1373,7 @@ function loop(ts) {
         state.slowMo -= dt;
     }
 
-    if (state.running) {
+    if (state.running && !state.paused) {
         updatePlayer(dt);
         updateDifficulty(dt);
         updateHazards(dt);
@@ -1407,6 +1396,56 @@ function roundRect(x, y, w, h, r) {
     ctx.arcTo(x, y + h, x, y, r);
     ctx.arcTo(x, y, x + w, y, r);
     ctx.closePath();
+}
+
+function setControlMode(mode) {
+    if (!["buttons", "split", "tilt"].includes(mode)) return;
+    controlMode = mode;
+    localStorage.setItem(CONTROL_MODE_KEY, mode);
+    controlModeInputs.forEach((radio) => { radio.checked = radio.value === mode; });
+    input.left = false;
+    input.right = false;
+    document.body.dataset.controlMode = mode;
+}
+
+function pauseGame() {
+    if (!state.running || state.gameOver) return;
+    state.paused = true;
+    input.left = false;
+    input.right = false;
+    if (pauseOverlay) pauseOverlay.hidden = false;
+}
+
+function resumeGame() {
+    if (!state.running || !state.paused) return;
+    state.paused = false;
+    if (pauseOverlay) pauseOverlay.hidden = true;
+    state.lastTime = 0;
+}
+
+async function enableTiltControl() {
+    if (typeof DeviceOrientationEvent === "undefined") {
+        showControlMessage("Tilt control is not supported on this device. Choose another mode.");
+        setControlMode("buttons");
+        return;
+    }
+    if (typeof DeviceOrientationEvent.requestPermission === "function") {
+        try {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            if (permission !== "granted") throw new Error("Motion permission was not granted.");
+        } catch (error) {
+            showControlMessage("Allow motion access to use tilt control, or choose another mode.");
+            setControlMode("buttons");
+            return;
+        }
+    }
+    tiltPermissionGranted = true;
+    showControlMessage("Tilt control enabled. Tilt gently to steer.");
+}
+
+function showControlMessage(message) {
+    const el = document.getElementById("controlMessage");
+    if (el) el.textContent = message;
 }
 
 function setInput(active, direction) {
@@ -1447,6 +1486,32 @@ function bindTouchButton(btn, direction) {
 bindTouchButton(leftBtn, "left");
 bindTouchButton(rightBtn, "right");
 
+if (pauseBtn) pauseBtn.addEventListener("click", pauseGame);
+if (resumeBtn) resumeBtn.addEventListener("click", resumeGame);
+controlModeInputs.forEach((radio) => radio.addEventListener("change", async () => {
+    if (!radio.checked) return;
+    setControlMode(radio.value);
+    if (radio.value === "tilt") await enableTiltControl();
+    else showControlMessage("Control mode saved for your next visit.");
+}));
+if (splitTouchZone) {
+    const steerFromTouch = (event) => {
+        if (!state.running || state.paused || controlMode !== "split") return;
+        event.preventDefault();
+        const rect = splitTouchZone.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        input.left = x < rect.width / 2;
+        input.right = !input.left;
+    };
+    splitTouchZone.addEventListener("pointerdown", (event) => { splitTouchZone.setPointerCapture?.(event.pointerId); steerFromTouch(event); });
+    splitTouchZone.addEventListener("pointermove", (event) => { if (event.buttons || event.pressure > 0) steerFromTouch(event); });
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => splitTouchZone.addEventListener(type, () => { input.left = false; input.right = false; }));
+}
+window.addEventListener("deviceorientation", (event) => {
+    if (controlMode === "tilt" && tiltPermissionGranted && Number.isFinite(event.gamma)) tiltGamma = event.gamma;
+});
+setControlMode(controlMode);
+
 playBtn.addEventListener("click", startGame);
 if (powerTipsToggle && powerTipsPanel) {
     powerTipsToggle.addEventListener("click", () => {
@@ -1459,6 +1524,8 @@ if (powerTipsToggle && powerTipsPanel) {
 restartBtn.addEventListener("click", startGame);
 menuBtn.addEventListener("click", () => {
     state.running = false;
+    state.paused = false;
+    if (pauseOverlay) pauseOverlay.hidden = true;
     state.gameOver = false;
     if (input.soundOn) audio.startAmbience();
     state.hazards = [];
