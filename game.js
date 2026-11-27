@@ -373,7 +373,6 @@ const state = {
     nextSpeedPowerUpScore: 45,
     pendingPowerUps: [],
     powerUpAlert: null,
-    meteorStorm: { phase: "idle", time: 0, nextScore: 45, laneX: canvas.width / 2, spawnTimer: 0 },
     speedBoost: 0,
     invulnerable: 0,
     shieldFade: 0,
@@ -562,7 +561,6 @@ function startGame() {
     state.nextSpeedPowerUpScore = 45;
     state.pendingPowerUps = [];
     state.powerUpAlert = null;
-    state.meteorStorm = { phase: "idle", time: 0, nextScore: 45, laneX: canvas.width / 2, spawnTimer: 0 };
     state.speedBoost = 0;
     state.invulnerable = 0;
     state.shieldFade = 0;
@@ -636,118 +634,6 @@ function spawnHazard() {
         nearMissed: false
     });
     return true;
-}
-
-function beginMeteorStorm() {
-    const lanes = [canvas.width * 0.22, canvas.width * 0.5, canvas.width * 0.78];
-    const storm = state.meteorStorm;
-    storm.phase = "warning";
-    storm.time = 3;
-    storm.laneX = lanes[(Math.random() * lanes.length) | 0];
-    storm.spawnTimer = 0;
-    state.powerUpAlert = { text: "METEOR STORM INCOMING — FIND THE SAFE LANE!", time: 3, type: "storm" };
-    audio.beep({ freq: 520, type: "sawtooth", dur: 0.22, gain: 0.16, slide: 1.8 });
-}
-
-function spawnStormMeteor() {
-    const storm = state.meteorStorm;
-    const size = 24 + Math.random() * 10;
-    const laneHalf = 70;
-    const safetyBuffer = 78;
-    const leftMax = storm.laneX - laneHalf - safetyBuffer;
-    const rightMin = storm.laneX + laneHalf + safetyBuffer;
-    const leftAvailable = leftMax >= size + 10;
-    const rightAvailable = rightMin <= canvas.width - size - 10;
-    if (!leftAvailable && !rightAvailable) return;
-
-    let minX, maxX;
-    if (leftAvailable && rightAvailable && Math.random() > 0.5) {
-        minX = rightMin; maxX = canvas.width - size - 10;
-    } else if (leftAvailable) {
-        minX = size + 10; maxX = leftMax;
-    } else {
-        minX = rightMin; maxX = canvas.width - size - 10;
-    }
-    const progress = Math.min(1, state.score / 180);
-    state.hazards.push({
-        type: "meteor",
-        x: minX + Math.random() * Math.max(0, maxX - minX),
-        y: -70,
-        size,
-        rotation: Math.random() * Math.PI * 2,
-        spin: (Math.random() * 3 + 2) * (Math.random() > 0.5 ? 1 : -1),
-        speedY: 300 + Math.random() * 75 + progress * 75,
-        driftX: 0,
-        trail: [],
-        nearMissed: false,
-        stormMeteor: true
-    });
-}
-
-function updateMeteorStorm(dt) {
-    const storm = state.meteorStorm;
-    if (storm.phase === "idle" && state.score >= storm.nextScore) {
-        storm.nextScore += 60;
-        beginMeteorStorm();
-        return;
-    }
-    if (storm.phase === "warning") {
-        storm.time -= dt;
-        if (state.powerUpAlert?.type === "storm") state.powerUpAlert.time = Math.max(0, storm.time);
-        if (storm.time <= 0) {
-            storm.phase = "active";
-            storm.time = 9;
-            storm.spawnTimer = 0;
-            // Clear only hazards that could intrude into the promised escape corridor.
-            state.hazards = state.hazards.filter(h =>
-                Math.abs(h.x - storm.laneX) > 150 + h.size
-            );
-            state.powerUpAlert = { text: "STORM ACTIVE — FOLLOW THE CYAN SAFE LANE!", time: 2.2, type: "storm" };
-            audio.beep({ freq: 760, type: "triangle", dur: 0.28, gain: 0.18, slide: 0.72 });
-        }
-        return;
-    }
-    if (storm.phase === "active") {
-        storm.time -= dt;
-        storm.spawnTimer += dt;
-        if (storm.spawnTimer >= 0.48) {
-            storm.spawnTimer = 0;
-            spawnStormMeteor();
-        }
-        if (storm.time <= 0) {
-            storm.phase = "idle";
-            storm.time = 0;
-            state.powerUpAlert = { text: "STORM CLEARED — NICE ESCAPE!", time: 2.2, type: "storm" };
-            addParticles(storm.laneX, canvas.height * 0.52, "#62fff0", 28, 1.1);
-            audio.ping();
-        }
-    }
-}
-
-function drawMeteorStormLane() {
-    const storm = state.meteorStorm;
-    if (storm.phase !== "active") return;
-    const laneWidth = 140;
-    const left = storm.laneX - laneWidth / 2;
-    ctx.save();
-    ctx.fillStyle = "rgba(46, 226, 255, 0.075)";
-    ctx.fillRect(left, 0, laneWidth, canvas.height);
-    ctx.strokeStyle = "rgba(87, 244, 255, 0.88)";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([10, 9]);
-    ctx.shadowColor = "#43efff";
-    ctx.shadowBlur = 13;
-    ctx.beginPath();
-    ctx.moveTo(left, 0); ctx.lineTo(left, canvas.height);
-    ctx.moveTo(left + laneWidth, 0); ctx.lineTo(left + laneWidth, canvas.height);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.textAlign = "center";
-    ctx.font = "bold 12px sans-serif";
-    ctx.fillStyle = "#9dfaff";
-    ctx.shadowBlur = 10;
-    ctx.fillText("SAFE LANE", storm.laneX, 92);
-    ctx.restore();
 }
 
 function updatePlayer(dt) {
@@ -998,13 +884,12 @@ function updateDifficulty(dt) {
     state.elapsed += dt * (state.speedBoost > 0 ? 2.5 : 1);
     state.score = Math.floor(state.elapsed);
     state.spawnTimer += dt;
-    updateMeteorStorm(dt);
 
     // Difficulty rises with survival score, but spawn pressure has a fair lower limit.
     const progress = Math.min(1, state.score / 120);
     state.spawnInterval = 0.95 - progress * 0.40;
 
-    if (state.meteorStorm.phase !== "active" && state.spawnTimer >= state.spawnInterval) {
+    if (state.spawnTimer >= state.spawnInterval) {
         // If no reachable safe lane exists, wait rather than creating an unavoidable pattern.
         if (spawnHazard()) state.spawnTimer = 0;
     }
@@ -1473,7 +1358,6 @@ function draw() {
     ctx.translate(shakeX, shakeY);
 
     drawBackground();
-    drawMeteorStormLane();
     for (const h of state.hazards) drawHazard(h);
     drawPowerUps();
     drawHero();
