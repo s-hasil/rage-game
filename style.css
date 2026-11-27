@@ -837,3 +837,35 @@ body.player-authenticated #communityPanel .leaderboard-profile-card {
   .power-tips-panel { width:100%; }
   .power-tips-toggle { width:100%; max-width:320px; }
 }
+
+
+/* ASTRIXAL mobile control and pause update */
+.pause-btn { position:absolute; z-index:12; top:12px; right:12px; width:46px; height:46px; display:grid; place-items:center; border:1px solid rgba(103,232,249,.7); border-radius:12px; color:#9ff7ff; background:rgba(5,17,32,.88); font-size:22px; cursor:pointer; box-shadow:0 0 18px rgba(0,210,255,.15); }
+.split-touch-zone { display:none; position:absolute; z-index:4; inset:86px 0 0; grid-template-columns:1fr 1fr; touch-action:none; pointer-events:none; }
+.split-touch-zone span { display:grid; place-items:end center; padding-bottom:110px; color:rgba(130,225,255,.14); font:700 10px "DM Mono",monospace; letter-spacing:.2em; border-right:1px dashed rgba(103,232,249,.08); }
+body[data-control-mode="split"] .split-touch-zone { display:grid; pointer-events:auto; }
+body[data-control-mode="split"] .touch-controls { display:none !important; }
+body[data-control-mode="tilt"] .touch-controls { display:none !important; }
+.touch-btn { width:82px; height:82px; border:2px solid rgba(115,235,255,.65); background:rgba(5,24,43,.88); font-size:48px; box-shadow:0 0 22px rgba(0,210,255,.22); touch-action:none; user-select:none; -webkit-user-select:none; }
+.touch-controls { bottom:34px; left:24px; right:24px; }
+.pause-overlay { position:absolute; z-index:20; inset:0; display:grid; place-items:center; padding:18px; background:rgba(2,7,18,.82); backdrop-filter:blur(10px); }
+.pause-overlay[hidden] { display:none !important; }
+.pause-card { width:min(430px,100%); max-height:100%; overflow:auto; padding:24px; border:1px solid rgba(103,232,249,.45); border-radius:14px; background:linear-gradient(145deg,#10233b,#070e1d); box-shadow:0 20px 60px #000b,0 0 35px #00cfff1c; }
+.pause-card h2 { margin:8px 0 18px; color:#f4fbff; font:800 clamp(28px,6vw,42px) "Barlow Condensed",sans-serif; }
+.pause-card h2 span { color:#67e8f9; }
+.pause-resume { width:100%; justify-content:center; margin-bottom:18px; }
+.control-options { display:grid; gap:10px; }
+.control-options > p { margin:0 0 2px; color:#8ca2bd; font:9px "DM Mono",monospace; letter-spacing:.12em; }
+.control-options label { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid rgba(130,165,207,.22); border-radius:8px; background:#09172a; cursor:pointer; }
+.control-options label:has(input:checked) { border-color:#67e8f9; background:#0d2639; }
+.control-options input { width:18px; height:18px; accent-color:#67e8f9; }
+.control-options label span { display:grid; gap:4px; }
+.control-options label b { color:#e8f6ff; font-size:12px; }
+.control-options label small,.control-message { color:#91a3bc; font-size:10px; line-height:1.5; }
+.control-message { min-height:15px; }
+@media(max-width:760px) {
+ body.playing .touch-btn { width:82px; height:82px; }
+ body.playing .touch-controls { bottom:28px; left:18px; right:18px; }
+ body.playing .pause-btn { top:8px; right:8px; width:42px; height:42px; }
+ .pause-card { padding:18px; }
+}
