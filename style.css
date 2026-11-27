@@ -808,3 +808,32 @@ body.player-authenticated #communityPanel .leaderboard-profile-card {
   display:block !important;
   visibility:visible !important;
 }
+
+
+/* Power-up guide and mobile-friendly menu disclosure. */
+.power-tips-toggle {
+  display:inline-flex; align-items:center; justify-content:space-between; gap:18px;
+  margin-top:18px; padding:11px 14px; min-width:220px;
+  color:#9deef4; background:rgba(12,27,48,.78);
+  border:1px solid rgba(104,220,239,.35); border-radius:6px;
+  font:700 9px "DM Mono",monospace; letter-spacing:.08em; cursor:pointer;
+}
+.power-tips-toggle span { font-size:15px; }
+.power-tips-toggle:hover { border-color:#79fff3; background:rgba(22,48,70,.9); }
+.power-tips-panel {
+  max-width:480px; margin-top:12px; padding:16px;
+  border:1px solid rgba(104,220,239,.24); border-radius:8px;
+  background:rgba(6,15,31,.88);
+}
+.power-tips-panel[hidden] { display:none !important; }
+.power-tip-row { display:flex; align-items:flex-start; gap:12px; padding:9px 0; }
+.power-tip-icon { width:30px; height:30px; flex:0 0 30px; display:grid; place-items:center; border-radius:50%; font-size:19px; }
+.shield-tip-icon { color:#79fff3; background:rgba(121,255,243,.1); }
+.speed-tip-icon { color:#ffd36a; background:rgba(255,211,106,.1); }
+.power-tip-row strong { display:block; margin:1px 0 5px; color:#dceafa; font:700 9px "DM Mono",monospace; letter-spacing:.06em; }
+.power-tip-row p,.power-tips-note { margin:0; color:#8999b3; font-size:10px; line-height:1.6; }
+.power-tips-note { padding-top:10px; border-top:1px solid rgba(115,143,180,.16); }
+@media(max-width:600px) {
+  .power-tips-panel { width:100%; }
+  .power-tips-toggle { width:100%; max-width:320px; }
+}
