@@ -1411,23 +1411,18 @@ function setControlMode(mode) {
 
 function pauseGame() {
     if (!state.running || state.gameOver) return;
-    state.paused = !state.paused;
+    state.paused = true;
     input.left = false;
     input.right = false;
-    if (pauseBtn) {
-        pauseBtn.textContent = state.paused ? "▶" : "Ⅱ";
-        pauseBtn.setAttribute("aria-label", state.paused ? "Resume game" : "Pause game");
-    }
-    if (!state.paused) state.lastTime = 0;
+    if (pauseOverlay) pauseOverlay.hidden = false;
+    if (pauseBtn) pauseBtn.setAttribute("aria-label", "Game paused");
 }
 
 function resumeGame() {
     if (!state.running || !state.paused) return;
     state.paused = false;
-    if (pauseBtn) {
-        pauseBtn.textContent = "Ⅱ";
-        pauseBtn.setAttribute("aria-label", "Pause game");
-    }
+    if (pauseOverlay) pauseOverlay.hidden = true;
+    if (pauseBtn) pauseBtn.setAttribute("aria-label", "Pause game");
     state.lastTime = 0;
 }
 
