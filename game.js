@@ -32,7 +32,7 @@ const supabaseClient = window.supabase?.createClient
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
         auth: {
             flowType: "pkce",
-            detectSessionInUrl: false,
+            detectSessionInUrl: true,
             persistSession: true,
             autoRefreshToken: true
         }
@@ -304,9 +304,9 @@ async function initializeCommunity() {
         return;
     }
 
-    // Listen first, then explicitly exchange the Google OAuth PKCE code.
-    // This avoids a silent return to the login screen if automatic URL detection
-    // races the app's initial session read on static GitHub Pages hosting.
+    // Supabase handles the OAuth PKCE callback during client initialization.
+    // Register the listener, then wait for the restored session before rendering
+    // the account UI. Do not manually exchange the same authorization code.
     supabaseClient.auth.onAuthStateChange((_event, session) => {
         currentUser = session?.user || null;
         renderAuthState();
@@ -315,24 +315,13 @@ async function initializeCommunity() {
 
     const callbackUrl = new URL(window.location.href);
     const oauthError = callbackUrl.searchParams.get("error_description") || callbackUrl.searchParams.get("error");
-    const oauthCode = callbackUrl.searchParams.get("code");
-
     if (oauthError) {
+        showAuthMessage("Google sign-in failed: " + oauthError, true);
         callbackUrl.searchParams.delete("error");
         callbackUrl.searchParams.delete("error_description");
         callbackUrl.searchParams.delete("error_code");
-        window.history.replaceState({}, document.title, callbackUrl.pathname + callbackUrl.search + callbackUrl.hash);
-        showAuthMessage("Google sign-in failed: " + oauthError, true);
-    } else if (oauthCode) {
-        const { data: exchanged, error: exchangeError } = await supabaseClient.auth.exchangeCodeForSession(oauthCode);
-        callbackUrl.searchParams.delete("code");
         callbackUrl.searchParams.delete("state");
         window.history.replaceState({}, document.title, callbackUrl.pathname + callbackUrl.search + callbackUrl.hash);
-        if (exchangeError) {
-            showAuthMessage("Google sign-in could not complete: " + exchangeError.message, true);
-        } else {
-            currentUser = exchanged.session?.user || exchanged.user || currentUser;
-        }
     }
 
     const { data, error } = await supabaseClient.auth.getSession();
