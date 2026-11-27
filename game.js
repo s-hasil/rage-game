@@ -205,6 +205,12 @@ async function loadLeaderboard() {
         (profiles || []).forEach(profile => { avatarById[profile.id] = profile.avatar_url || ""; });
     }
 
+    // Use exactly the same resolved image for the signed-in pilot in both places.
+    if (currentUser) {
+        const ownMetadataAvatar = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || "";
+        avatarById[currentUser.id] = avatarById[currentUser.id] || ownMetadataAvatar || generatedPilotAvatar(currentPilotName());
+    }
+
     leaderboardList.innerHTML = "";
     if (!pilots.length) {
         leaderboardList.innerHTML = '<li class="leaderboard-empty">No scores yet. Be the first pilot on the board.</li>';
@@ -262,7 +268,9 @@ async function loadLeaderboard() {
         .eq("id", currentUser.id)
         .maybeSingle();
     const ownName = ownProfile?.username || currentPilotName();
-    const ownAvatar = ownProfile?.avatar_url || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || generatedPilotAvatar(ownName);
+    const ownAvatar = avatarById[currentUser.id] || ownProfile?.avatar_url || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || generatedPilotAvatar(ownName);
+    // Keep the player card and their leaderboard row in sync, even when their profile is outside the top ten.
+    avatarById[currentUser.id] = ownAvatar;
     profileName.textContent = ownName;
     profileFallback.textContent = ownName.trim().charAt(0).toUpperCase() || "P";
     profileAvatar.hidden = false;
