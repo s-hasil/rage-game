@@ -155,20 +155,6 @@
                     <button id="leftBtn" class="touch-btn" aria-label="Move left">‹</button>
                     <button id="rightBtn" class="touch-btn" aria-label="Move right">›</button>
                 </div>
-                <section id="pauseOverlay" class="pause-overlay" hidden aria-label="Game paused">
-                    <div class="pause-card">
-                        <p class="eyebrow">FLIGHT PAUSED</p>
-                        <h2>GAME <span>PAUSED</span></h2>
-                        <button id="resumeBtn" class="launch-btn pause-resume" type="button">RESUME FLIGHT</button>
-                        <div class="control-options">
-                            <p>CHOOSE YOUR CONTROL</p>
-                            <label><input type="radio" name="controlMode" value="buttons"><span><b>Touch buttons</b><small>Use the left and right buttons</small></span></label>
-                            <label><input type="radio" name="controlMode" value="split"><span><b>Split touch</b><small>Touch the left or right half</small></span></label>
-                            <label><input type="radio" name="controlMode" value="tilt"><span><b>Tilt control</b><small>Tilt your phone to steer</small></span></label>
-                            <small id="controlMessage" class="control-message" role="status">Your choice is saved automatically.</small>
-                        </div>
-                    </div>
-                </section>
         <section id="gameOverScreen" class="gameover-screen" aria-live="polite">
             <div class="gameover-mark">×</div>
             <div class="eyebrow"><span class="eyebrow-line"></span> SIGNAL LOST</div>
@@ -192,6 +178,6 @@
         <footer class="site-footer"><span>VOIDRUN <b>—</b> A LITTLE ARCADE PROJECT</span><span>BUILT TO BE PLAYED, NOT TAKEN SERIOUSLY.</span></footer>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="game.js?v=controls-pause-meteors-1"></script>
+    <script src="game.js?v=simple-pause-button-2"></script>
 </body>
 </html>
