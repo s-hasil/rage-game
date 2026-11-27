@@ -358,8 +358,9 @@ const state = {
     particles: [],
     hazards: [],
     powerUps: [],
-    nextPowerUpScore: 30,
-    powerUpSpawnCount: 0,
+    nextShieldPowerUpScore: 30,
+    nextSpeedPowerUpScore: 15,
+    pendingPowerUps: [],
     powerUpAlert: null,
     speedBoost: 0,
     invulnerable: 0,
@@ -541,8 +542,9 @@ function startGame() {
     state.particles = [];
     state.hazards = [];
     state.powerUps = [];
-    state.nextPowerUpScore = 30;
-    state.powerUpSpawnCount = 0;
+    state.nextShieldPowerUpScore = 30;
+    state.nextSpeedPowerUpScore = 15;
+    state.pendingPowerUps = [];
     state.powerUpAlert = null;
     state.speedBoost = 0;
     state.invulnerable = 0;
@@ -751,10 +753,8 @@ function updateParticles(dt) {
 }
 
 
-function spawnPowerUp() {
-    if (state.powerUps.length) return;
-    const type = state.powerUpSpawnCount % 2 === 0 ? "shield" : "speed";
-    state.powerUpSpawnCount += 1;
+function spawnPowerUp(type) {
+    if (state.powerUps.length || !type) return;
     state.powerUps.push({
         type,
         x: 34 + Math.random() * (canvas.width - 68),
@@ -770,10 +770,21 @@ function spawnPowerUp() {
     };
 }
 function updatePowerUps(dt) {
-    // Guaranteed drops at 30, 60, 90... score. Drops alternate Shield / Speed.
-    if (state.score >= state.nextPowerUpScore && state.powerUps.length === 0) {
-        spawnPowerUp();
-        state.nextPowerUpScore += 30;
+    // Shield stays on its original 30-point schedule. Speed has its own schedule.
+    // Queue drops in score order so none are lost if the score clock jumps past them.
+    while (state.score >= Math.min(state.nextShieldPowerUpScore, state.nextSpeedPowerUpScore)) {
+        if (state.nextSpeedPowerUpScore < state.nextShieldPowerUpScore) {
+            state.pendingPowerUps.push("speed");
+            state.nextSpeedPowerUpScore = state.nextSpeedPowerUpScore === 15
+                ? 25
+                : state.nextSpeedPowerUpScore + 20;
+        } else {
+            state.pendingPowerUps.push("shield");
+            state.nextShieldPowerUpScore += 30;
+        }
+    }
+    if (state.powerUps.length === 0 && state.pendingPowerUps.length) {
+        spawnPowerUp(state.pendingPowerUps.shift());
     }
     if (state.speedBoost > 0) state.speedBoost = Math.max(0, state.speedBoost - dt);
     if (state.powerUpAlert) {
