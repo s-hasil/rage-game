@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=pause-menu-layout-fix-4" />
+    <link rel="stylesheet" href="style.css?v=astrixal-pause-reference-5" />
 </head>
 <body>
     <div class="space-noise" aria-hidden="true"></div>
@@ -157,16 +157,32 @@
                 </div>
         <section id="pauseOverlay" class="pause-overlay" hidden aria-label="Game paused">
             <div class="pause-card" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
-                <div class="pause-eyebrow">FLIGHT CONTROL</div>
-                <h2 id="pauseTitle">GAME <span>PAUSED</span></h2>
-                <p class="pause-instruction">Choose how you want to steer your rocket.</p>
+                <div class="pause-title-wrap"><span class="pause-title-line"></span><h2 id="pauseTitle">GAME PAUSED</h2><span class="pause-title-line"></span></div>
+                <div class="pause-eyebrow"><span></span> FLIGHT CONTROL <span></span></div>
+                <p class="pause-instruction">Choose how you want to steer your rocket</p>
                 <div class="pause-control-list">
-                    <label class="pause-control-option"><input type="radio" name="controlMode" value="buttons"><span class="pause-option-icon">↔</span><span class="pause-option-copy"><b>TOUCH BUTTONS</b><small>Use the left and right arrows</small></span></label>
-                    <label class="pause-control-option"><input type="radio" name="controlMode" value="split"><span class="pause-option-icon">◧</span><span class="pause-option-copy"><b>SPLIT TOUCH</b><small>Touch either half of the screen</small></span></label>
-                    <label class="pause-control-option"><input type="radio" name="controlMode" value="tilt"><span class="pause-option-icon">⌁</span><span class="pause-option-copy"><b>PHONE TILT</b><small>Tilt left or right to steer</small></span></label>
+                    <label class="pause-control-option">
+                        <input type="radio" name="controlMode" value="buttons">
+                        <span class="pause-option-icon pause-icon-buttons"><i>‹</i><i>›</i></span>
+                        <span class="pause-option-copy"><b>Touch Buttons</b><small>Use the on-screen left and right buttons.</small></span>
+                        <span class="pause-radio" aria-hidden="true"></span>
+                    </label>
+                    <label class="pause-control-option">
+                        <input type="radio" name="controlMode" value="split">
+                        <span class="pause-option-icon pause-icon-split"><i>☝</i><i>☝</i></span>
+                        <span class="pause-option-copy"><b>Split Touch</b><small>Touch the left or right half of the screen to move.</small></span>
+                        <span class="pause-radio" aria-hidden="true"></span>
+                    </label>
+                    <label class="pause-control-option">
+                        <input type="radio" name="controlMode" value="tilt">
+                        <span class="pause-option-icon pause-icon-tilt"><i>↶</i><i>▱</i><i>↷</i></span>
+                        <span class="pause-option-copy"><b>Phone Tilt</b><small>Tilt your phone left or right to steer the rocket.</small></span>
+                        <span class="pause-radio" aria-hidden="true"></span>
+                    </label>
                 </div>
                 <p id="controlMessage" class="pause-control-message" role="status">Your control choice is saved on this device.</p>
-                <button id="resumeBtn" class="pause-resume-btn" type="button">RESUME GAME <span>▶</span></button>
+                <button id="resumeBtn" class="pause-resume-btn" type="button"><span>▶</span> RESUME GAME</button>
+                <button id="pauseRestartBtn" class="pause-restart-btn" type="button"><span>↻</span> RESTART</button>
             </div>
         </section>
         <section id="gameOverScreen" class="gameover-screen" aria-live="polite">
