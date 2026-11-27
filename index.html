@@ -155,6 +155,20 @@
                     <button id="leftBtn" class="touch-btn" aria-label="Move left">‹</button>
                     <button id="rightBtn" class="touch-btn" aria-label="Move right">›</button>
                 </div>
+        <section id="pauseOverlay" class="pause-overlay" hidden aria-label="Game paused">
+            <div class="pause-card" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+                <div class="pause-eyebrow">FLIGHT CONTROL</div>
+                <h2 id="pauseTitle">GAME <span>PAUSED</span></h2>
+                <p class="pause-instruction">Choose how you want to steer your rocket.</p>
+                <div class="pause-control-list">
+                    <label class="pause-control-option"><input type="radio" name="controlMode" value="buttons"><span class="pause-option-icon">↔</span><span class="pause-option-copy"><b>TOUCH BUTTONS</b><small>Use the left and right arrows</small></span></label>
+                    <label class="pause-control-option"><input type="radio" name="controlMode" value="split"><span class="pause-option-icon">◧</span><span class="pause-option-copy"><b>SPLIT TOUCH</b><small>Touch either half of the screen</small></span></label>
+                    <label class="pause-control-option"><input type="radio" name="controlMode" value="tilt"><span class="pause-option-icon">⌁</span><span class="pause-option-copy"><b>PHONE TILT</b><small>Tilt left or right to steer</small></span></label>
+                </div>
+                <p id="controlMessage" class="pause-control-message" role="status">Your control choice is saved on this device.</p>
+                <button id="resumeBtn" class="pause-resume-btn" type="button">RESUME GAME <span>▶</span></button>
+            </div>
+        </section>
         <section id="gameOverScreen" class="gameover-screen" aria-live="polite">
             <div class="gameover-mark">×</div>
             <div class="eyebrow"><span class="eyebrow-line"></span> SIGNAL LOST</div>
@@ -178,6 +192,6 @@
         <footer class="site-footer"><span>VOIDRUN <b>—</b> A LITTLE ARCADE PROJECT</span><span>BUILT TO BE PLAYED, NOT TAKEN SERIOUSLY.</span></footer>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="game.js?v=simple-pause-button-2"></script>
+    <script src="game.js?v=pause-control-menu-3"></script>
 </body>
 </html>
