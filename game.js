@@ -208,18 +208,22 @@ async function loadLeaderboard() {
         return;
     }
     leaderboardList.innerHTML = '<li class="leaderboard-empty">Loading top 10 pilots…</li>';
+    // Keep the public query limited to display-safe fields. Do not request account UUIDs.
+    // The avatar column is optional across older leaderboard view versions, so use
+    // the stable generated avatar rather than making the entire board fail to load.
     const { data, error } = await supabaseClient.from("leaderboard")
-        .select("username,avatar_url,high_score")
+        .select("username,high_score")
         .order("high_score", { ascending: false })
         .limit(10);
     if (error) {
-        leaderboardList.innerHTML = '<li class="leaderboard-empty">Could not load rankings. Check that the Supabase SQL setup completed.</li>';
+        console.error("ASTRIXAL leaderboard query failed:", error);
+        leaderboardList.innerHTML = '<li class="leaderboard-empty">Could not load rankings. Please refresh or contact support.</li>';
         return;
     }
 
     const pilots = data || [];
     const avatarByName = {};
-    pilots.forEach(pilot => { avatarByName[pilot.username] = pilot.avatar_url || ""; });
+    pilots.forEach(pilot => { avatarByName[pilot.username] = generatedPilotAvatar(pilot.username || "Pilot"); });
 
     if (currentUser) {
         const ownMetadataAvatar = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || "";
