@@ -211,11 +211,10 @@ async function loadLeaderboard() {
         return;
     }
     leaderboardList.innerHTML = '<li class="leaderboard-empty">Loading top 10 pilots…</li>';
-    // Keep the public query limited to display-safe fields. Do not request account UUIDs.
-    // The avatar column is optional across older leaderboard view versions, so use
-    // the stable generated avatar rather than making the entire board fail to load.
+    // Public leaderboard exposes only display-safe fields. Never request player UUIDs.
+    // avatar_url is the same public profile image used by each player's profile.
     const { data, error } = await supabaseClient.from("leaderboard")
-        .select("username,high_score")
+        .select("username,avatar_url,high_score")
         .order("high_score", { ascending: false })
         .limit(10);
     if (error) {
@@ -226,11 +225,14 @@ async function loadLeaderboard() {
 
     const pilots = data || [];
     const avatarByName = {};
-    pilots.forEach(pilot => { avatarByName[pilot.username] = generatedPilotAvatar(pilot.username || "Pilot"); });
+    pilots.forEach(pilot => {
+        avatarByName[pilot.username] = pilot.avatar_url || generatedPilotAvatar(pilot.username || "Pilot");
+    });
 
     if (currentUser) {
         const ownMetadataAvatar = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || "";
-        avatarByName[currentPilotName()] = avatarByName[currentPilotName()] || ownMetadataAvatar || generatedPilotAvatar(currentPilotName());
+        const ownProfileName = currentUser.user_metadata?.username || currentPilotName();
+        avatarByName[ownProfileName] = avatarByName[ownProfileName] || ownMetadataAvatar || generatedPilotAvatar(ownProfileName);
     }
 
     leaderboardList.innerHTML = "";
