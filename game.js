@@ -175,6 +175,11 @@ async function sendPasswordReset() {
     showProfileMessage(error ? error.message : "Password reset link sent to " + email + ".");
 }
 
+function generatedPilotAvatar(seed) {
+    const safeSeed = String(seed || "astrixal-pilot").trim() || "astrixal-pilot";
+    return "https://api.dicebear.com/9.x/adventurer/svg?seed=" + encodeURIComponent(safeSeed);
+}
+
 async function loadLeaderboard() {
     if (!supabaseClient) {
         leaderboardList.innerHTML = '<li class="leaderboard-empty">Leaderboard service could not load. Refresh the page.</li>';
@@ -214,16 +219,17 @@ async function loadLeaderboard() {
 
             const avatar = document.createElement("span");
             avatar.className = "leaderboard-avatar";
-            const avatarUrl = avatarById[pilot.user_id];
-            if (avatarUrl) {
-                const image = document.createElement("img");
-                image.src = avatarUrl;
-                image.alt = "";
-                image.loading = "lazy";
-                avatar.append(image);
-            } else {
-                avatar.textContent = (pilot.username || "P").trim().charAt(0).toUpperCase();
-            }
+            const pilotName = pilot.username || "Unknown Pilot";
+            const avatarUrl = avatarById[pilot.user_id] || generatedPilotAvatar(pilotName);
+            const image = document.createElement("img");
+            image.src = avatarUrl;
+            image.alt = "";
+            image.loading = "lazy";
+            image.onerror = () => {
+                image.onerror = null;
+                image.src = generatedPilotAvatar(pilotName + "-fallback");
+            };
+            avatar.append(image);
 
             const name = document.createElement("span");
             name.className = "leaderboard-player";
@@ -256,13 +262,16 @@ async function loadLeaderboard() {
         .eq("id", currentUser.id)
         .maybeSingle();
     const ownName = ownProfile?.username || currentPilotName();
-    const ownAvatar = ownProfile?.avatar_url || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || "";
+    const ownAvatar = ownProfile?.avatar_url || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || generatedPilotAvatar(ownName);
     profileName.textContent = ownName;
     profileFallback.textContent = ownName.trim().charAt(0).toUpperCase() || "P";
-    profileAvatar.hidden = !ownAvatar;
-    profileFallback.hidden = Boolean(ownAvatar);
-    if (ownAvatar) profileAvatar.src = ownAvatar;
-    else profileAvatar.removeAttribute("src");
+    profileAvatar.hidden = false;
+    profileFallback.hidden = true;
+    profileAvatar.onerror = () => {
+        profileAvatar.onerror = null;
+        profileAvatar.src = generatedPilotAvatar(ownName + "-fallback");
+    };
+    profileAvatar.src = ownAvatar;
 
     const ownRank = pilots.findIndex(pilot => pilot.user_id === currentUser.id);
     const ownLeaderboardRow = ownRank >= 0 ? pilots[ownRank] : null;
