@@ -575,6 +575,7 @@ function startGame() {
 }
 
 function endGame() {
+    if (state.gameOver || !state.running) return;
     state.running = false;
     state.paused = false;
     if (pauseOverlay) pauseOverlay.hidden = true;
@@ -705,9 +706,14 @@ function updateHazards(dt) {
 
         const dx = h.x - player.x;
         const dy = h.y - (player.y - 20);
-        const dist = Math.hypot(dx, dy);
+        // Elliptical hitbox follows the visible rocket body, not just its centre.
+        // This prevents hazards visibly overlapping the rocket from slipping through.
+        const collisionX = player.w * 0.46 + h.size * 0.42;
+        const collisionY = player.h * 0.34 + h.size * 0.42;
+        const overlapsRocket = (dx * dx) / (collisionX * collisionX) +
+            (dy * dy) / (collisionY * collisionY) <= 1;
 
-        if (dist < hitRadius + h.size * 0.55 && state.invulnerable <= 0 && state.shieldFade <= 0) {
+        if (overlapsRocket && state.invulnerable <= 0 && state.shieldFade <= 0) {
             state.slowMo = 0.3;
             state.shake = 13;
             addParticles(player.x, player.y - 14, "#ff625d", 42, 1.6);
@@ -1502,14 +1508,14 @@ controlModeInputs.forEach((radio) => radio.addEventListener("change", async () =
 if (splitTouchZone) {
     const steerFromTouch = (event) => {
         if (!state.running || state.paused || controlMode !== "split") return;
-        event.preventDefault();
+        if (event.cancelable) event.preventDefault();
         const rect = splitTouchZone.getBoundingClientRect();
         const x = event.clientX - rect.left;
         input.left = x < rect.width / 2;
         input.right = !input.left;
     };
-    splitTouchZone.addEventListener("pointerdown", (event) => { splitTouchZone.setPointerCapture?.(event.pointerId); steerFromTouch(event); });
-    splitTouchZone.addEventListener("pointermove", (event) => { if (event.buttons || event.pressure > 0) steerFromTouch(event); });
+    splitTouchZone.addEventListener("pointerdown", (event) => { event.preventDefault(); splitTouchZone.setPointerCapture?.(event.pointerId); steerFromTouch(event); }, { passive: false });
+    splitTouchZone.addEventListener("pointermove", (event) => { if (event.buttons || event.pressure > 0) steerFromTouch(event); }, { passive: false });
     ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => splitTouchZone.addEventListener(type, () => { input.left = false; input.right = false; }));
 }
 window.addEventListener("deviceorientation", (event) => {
