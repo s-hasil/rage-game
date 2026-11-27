@@ -545,6 +545,7 @@ function startGame() {
     state.paused = false;
     state.gameOver = false;
     if (pauseOverlay) pauseOverlay.hidden = true;
+    if (pauseBtn) { pauseBtn.textContent = "Ⅱ"; pauseBtn.setAttribute("aria-label", "Pause game"); }
     state.score = 0;
     state.combo = 1;
     state.nearMissStreak = 0;
@@ -1410,16 +1411,23 @@ function setControlMode(mode) {
 
 function pauseGame() {
     if (!state.running || state.gameOver) return;
-    state.paused = true;
+    state.paused = !state.paused;
     input.left = false;
     input.right = false;
-    if (pauseOverlay) pauseOverlay.hidden = false;
+    if (pauseBtn) {
+        pauseBtn.textContent = state.paused ? "▶" : "Ⅱ";
+        pauseBtn.setAttribute("aria-label", state.paused ? "Resume game" : "Pause game");
+    }
+    if (!state.paused) state.lastTime = 0;
 }
 
 function resumeGame() {
     if (!state.running || !state.paused) return;
     state.paused = false;
-    if (pauseOverlay) pauseOverlay.hidden = true;
+    if (pauseBtn) {
+        pauseBtn.textContent = "Ⅱ";
+        pauseBtn.setAttribute("aria-label", "Pause game");
+    }
     state.lastTime = 0;
 }
 
