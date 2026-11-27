@@ -24,6 +24,8 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+      - name: Verify Capacitor TypeScript config
+        run: npx tsc --noEmit --skipLibCheck --moduleResolution node --target ES2020 capacitor.config.ts
       - run: npx cap add android
       - run: npm run android:sync
       - name: Build debug APK for device testing
