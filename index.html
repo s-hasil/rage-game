@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=leaderboard-avatar-auth-fix-3" />
+    <link rel="stylesheet" href="style.css?v=powerups-guide-1" />
 </head>
 <body>
     <div class="space-noise" aria-hidden="true"></div>
@@ -42,6 +42,12 @@
                 <div class="menu-stats">
                     <div class="best-stat"><span class="stat-label">PERSONAL BEST</span><strong id="menuBest">0</strong><span class="stat-unit">POINTS</span></div>
                     <div class="tip-stat"><span class="tip-symbol">✳</span><span><b>FLIGHT TIP</b><small>Skim past hazards to build your combo.</small></span></div>
+                </div>
+                <button id="powerTipsToggle" class="power-tips-toggle" type="button" aria-expanded="false" aria-controls="powerTipsPanel">⚡ POWER-UPS &amp; TIPS <span>＋</span></button>
+                <div id="powerTipsPanel" class="power-tips-panel" hidden>
+                    <div class="power-tip-row"><span class="power-tip-icon shield-tip-icon">⬡</span><div><strong>SHIELD · 5 SECONDS</strong><p>Appears at 30, 90, 150… score. Collect it to survive one hazard-free window.</p></div></div>
+                    <div class="power-tip-row"><span class="power-tip-icon speed-tip-icon">ϟ</span><div><strong>SPEED BOOST · 7 SECONDS</strong><p>Appears at 60, 120, 180… score. Collect it to make your score clock run at 2.5× speed.</p></div></div>
+                    <p class="power-tips-note">Power-ups alternate every 30 points. Watch for the glowing drop and move into it to collect it.</p>
                 </div>
                 <div class="menu-actions">
                     <button id="playBtn" class="launch-btn"><span>LAUNCH MISSION</span><span class="launch-arrow">↗</span></button>
@@ -170,6 +176,6 @@
         <footer class="site-footer"><span>VOIDRUN <b>—</b> A LITTLE ARCADE PROJECT</span><span>BUILT TO BE PLAYED, NOT TAKEN SERIOUSLY.</span></footer>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="game.js?v=profile-avatar-fallback-5"></script>
+    <script src="game.js?v=powerups-guide-1"></script>
 </body>
 </html>
