@@ -142,6 +142,8 @@
             <div class="game-heading"><span><i class="live-dot"></i> LIVE FLIGHT FEED</span><span class="game-heading-right">SECTOR 07 <b>•</b> SURVIVAL PROTOCOL</span></div>
             <div class="game-shell">
                 <canvas id="game" width="420" height="700" aria-label="Pilot your rocket and dodge falling space hazards"></canvas>
+                <button id="pauseBtn" class="pause-btn" type="button" aria-label="Pause game">Ⅱ</button>
+                <div id="splitTouchZone" class="split-touch-zone" aria-hidden="true"><span>LEFT</span><span>RIGHT</span></div>
                 <div id="hud" class="hud">
                     <div class="hud-card"><span class="hud-label">SCORE</span><strong id="scoreValue">0000</strong></div>
                     <div class="hud-card hud-best"><span class="hud-label">BEST RUN</span><strong id="bestValue">0000</strong></div>
@@ -153,6 +155,20 @@
                     <button id="leftBtn" class="touch-btn" aria-label="Move left">‹</button>
                     <button id="rightBtn" class="touch-btn" aria-label="Move right">›</button>
                 </div>
+                <section id="pauseOverlay" class="pause-overlay" hidden aria-label="Game paused">
+                    <div class="pause-card">
+                        <p class="eyebrow">FLIGHT PAUSED</p>
+                        <h2>GAME <span>PAUSED</span></h2>
+                        <button id="resumeBtn" class="launch-btn pause-resume" type="button">RESUME FLIGHT</button>
+                        <div class="control-options">
+                            <p>CHOOSE YOUR CONTROL</p>
+                            <label><input type="radio" name="controlMode" value="buttons"><span><b>Touch buttons</b><small>Use the left and right buttons</small></span></label>
+                            <label><input type="radio" name="controlMode" value="split"><span><b>Split touch</b><small>Touch the left or right half</small></span></label>
+                            <label><input type="radio" name="controlMode" value="tilt"><span><b>Tilt control</b><small>Tilt your phone to steer</small></span></label>
+                            <small id="controlMessage" class="control-message" role="status">Your choice is saved automatically.</small>
+                        </div>
+                    </div>
+                </section>
         <section id="gameOverScreen" class="gameover-screen" aria-live="polite">
             <div class="gameover-mark">×</div>
             <div class="eyebrow"><span class="eyebrow-line"></span> SIGNAL LOST</div>
@@ -176,6 +192,6 @@
         <footer class="site-footer"><span>VOIDRUN <b>—</b> A LITTLE ARCADE PROJECT</span><span>BUILT TO BE PLAYED, NOT TAKEN SERIOUSLY.</span></footer>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="game.js?v=powerups-guide-1"></script>
+    <script src="game.js?v=controls-pause-meteors-1"></script>
 </body>
 </html>
