@@ -8,6 +8,8 @@ const playBtn = document.getElementById("playBtn");
 const restartBtn = document.getElementById("restartBtn");
 const menuBtn = document.getElementById("menuBtn");
 const soundToggle = document.getElementById("soundToggle");
+const powerTipsToggle = document.getElementById("powerTipsToggle");
+const powerTipsPanel = document.getElementById("powerTipsPanel");
 const damageFlash = document.getElementById("damageFlash");
 
 const scoreValue = document.getElementById("scoreValue");
@@ -357,6 +359,9 @@ const state = {
     hazards: [],
     powerUps: [],
     nextPowerUpScore: 30,
+    powerUpSpawnCount: 0,
+    powerUpAlert: null,
+    speedBoost: 0,
     invulnerable: 0,
     shieldFade: 0,
     shieldWarningPlayed: false,
@@ -537,6 +542,9 @@ function startGame() {
     state.hazards = [];
     state.powerUps = [];
     state.nextPowerUpScore = 30;
+    state.powerUpSpawnCount = 0;
+    state.powerUpAlert = null;
+    state.speedBoost = 0;
     state.invulnerable = 0;
     state.shieldFade = 0;
     state.shieldWarningPlayed = false;
@@ -745,30 +753,49 @@ function updateParticles(dt) {
 
 function spawnPowerUp() {
     if (state.powerUps.length) return;
+    const type = state.powerUpSpawnCount % 2 === 0 ? "shield" : "speed";
+    state.powerUpSpawnCount += 1;
     state.powerUps.push({
+        type,
         x: 34 + Math.random() * (canvas.width - 68),
         y: -35,
         size: 22,
         speedY: 145 + Math.min(70, state.elapsed * 0.7),
         pulse: Math.random() * Math.PI * 2
     });
+    state.powerUpAlert = {
+        text: type === "speed" ? "SPEED BOOST INCOMING — COLLECT IT!" : "SHIELD INCOMING — COLLECT IT!",
+        time: 2.6,
+        type
+    };
 }
 function updatePowerUps(dt) {
-    // Guaranteed spawn at 30, 60, 90... points. If one is already
-    // on screen, hold the next threshold until that pickup is cleared.
+    // Guaranteed drops at 30, 60, 90... score. Drops alternate Shield / Speed.
     if (state.score >= state.nextPowerUpScore && state.powerUps.length === 0) {
         spawnPowerUp();
         state.nextPowerUpScore += 30;
+    }
+    if (state.speedBoost > 0) state.speedBoost = Math.max(0, state.speedBoost - dt);
+    if (state.powerUpAlert) {
+        state.powerUpAlert.time -= dt;
+        if (state.powerUpAlert.time <= 0) state.powerUpAlert = null;
     }
     for (let i = state.powerUps.length - 1; i >= 0; i--) {
         const item = state.powerUps[i];
         item.y += item.speedY * dt;
         item.pulse += dt * 4;
         if (Math.hypot(item.x - player.x, item.y - (player.y - 20)) < item.size + player.w * 0.38) {
-            state.invulnerable = 5;
-            state.shieldFade = 0;
-            state.shieldWarningPlayed = false;
-            addParticles(item.x, item.y, "#76fff2", 30, 1.25);
+            if (item.type === "speed") {
+                state.speedBoost = 7;
+                addParticles(item.x, item.y, "#ffd36a", 36, 1.35);
+                state.powerUpAlert = { text: "SPEED BOOST ACTIVE — 2.5X SCORE!", time: 2.2, type: "speed" };
+            } else {
+                state.invulnerable = 5;
+                state.shieldFade = 0;
+                state.shieldWarningPlayed = false;
+                addParticles(item.x, item.y, "#76fff2", 30, 1.25);
+                state.powerUpAlert = { text: "SHIELD ACTIVE — 5 SECONDS!", time: 2.2, type: "shield" };
+            }
             audio.ping();
             state.powerUps.splice(i, 1);
             continue;
@@ -779,38 +806,61 @@ function updatePowerUps(dt) {
 function drawPowerUps() {
     for (const item of state.powerUps) {
         const pulse = 1 + Math.sin(item.pulse) * 0.12;
+        const speedType = item.type === "speed";
+        const accent = speedType ? "#ffd36a" : "#62fff0";
         ctx.save();
         ctx.translate(item.x, item.y);
         ctx.scale(pulse, pulse);
         ctx.globalCompositeOperation = "lighter";
-        ctx.shadowColor = "#62fff0";
+        ctx.shadowColor = accent;
         ctx.shadowBlur = 25;
         const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, item.size * 1.5);
         glow.addColorStop(0, "rgba(255,255,255,.98)");
-        glow.addColorStop(.28, "rgba(100,255,240,.9)");
+        glow.addColorStop(.28, speedType ? "rgba(255,211,106,.9)" : "rgba(100,255,240,.9)");
         glow.addColorStop(1, "rgba(30,180,255,0)");
         ctx.fillStyle = glow;
         ctx.beginPath(); ctx.arc(0, 0, item.size * 1.5, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = "#aafffa";
+        ctx.strokeStyle = accent;
         ctx.lineWidth = 2.5;
         ctx.beginPath(); ctx.arc(0, 0, item.size * .72, 0, Math.PI * 2); ctx.stroke();
         ctx.fillStyle = "#ffffff";
         ctx.beginPath();
-        ctx.moveTo(0, -item.size * .48);
-        ctx.lineTo(item.size * .13, -item.size * .12);
-        ctx.lineTo(item.size * .43, 0);
-        ctx.lineTo(item.size * .13, item.size * .12);
-        ctx.lineTo(0, item.size * .48);
-        ctx.lineTo(-item.size * .13, item.size * .12);
-        ctx.lineTo(-item.size * .43, 0);
-        ctx.lineTo(-item.size * .13, -item.size * .12);
+        if (speedType) {
+            ctx.moveTo(3, -item.size * .52);
+            ctx.lineTo(-item.size * .12, -item.size * .06);
+            ctx.lineTo(item.size * .2, -item.size * .06);
+            ctx.lineTo(-3, item.size * .52);
+            ctx.lineTo(item.size * .12, item.size * .06);
+            ctx.lineTo(-item.size * .2, item.size * .06);
+        } else {
+            ctx.moveTo(0, -item.size * .5);
+            ctx.lineTo(item.size * .38, -item.size * .28);
+            ctx.lineTo(item.size * .32, item.size * .18);
+            ctx.lineTo(0, item.size * .5);
+            ctx.lineTo(-item.size * .32, item.size * .18);
+            ctx.lineTo(-item.size * .38, -item.size * .28);
+        }
         ctx.closePath(); ctx.fill();
+        ctx.restore();
+    }
+    if (state.powerUpAlert) {
+        const alert = state.powerUpAlert;
+        const speedType = alert.type === "speed";
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, alert.time * 1.5);
+        ctx.textAlign = "center";
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillStyle = speedType ? "#ffd36a" : "#9bfff5";
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 12;
+        ctx.fillText(alert.text, canvas.width / 2, 68);
         ctx.restore();
     }
 }
 
 function updateDifficulty(dt) {
-    state.elapsed += dt;
+    // Speed boost advances the score clock 2.5x while real-time hazards stay fair.
+    state.elapsed += dt * (state.speedBoost > 0 ? 2.5 : 1);
     state.score = Math.floor(state.elapsed);
     state.spawnTimer += dt;
 
@@ -1249,11 +1299,16 @@ function drawParticles() {
 }
 
 function drawShieldStatus() {
-    if (state.invulnerable <= 0 && state.shieldFade <= 0) return;
+    const shieldActive = state.invulnerable > 0 || state.shieldFade > 0;
+    const speedActive = state.speedBoost > 0;
+    if (!shieldActive && !speedActive) return;
 
     const warning = state.invulnerable > 0 && state.invulnerable <= 2;
     const remaining = Math.max(0, state.invulnerable);
-    const label = state.shieldFade > 0 ? "SHIELD ENDING" : `SHIELD  ${remaining.toFixed(1)}s`;
+    const label = speedActive
+        ? `SPEED BOOST  2.5X  ${state.speedBoost.toFixed(1)}s`
+        : state.shieldFade > 0 ? "SHIELD ENDING" : `SHIELD  ${remaining.toFixed(1)}s`;
+    const color = speedActive ? "#ffd36a" : warning ? "#ffc66e" : "#9bfff5";
     const barWidth = 112;
     const barX = canvas.width / 2 - barWidth / 2;
     const barY = 24;
@@ -1261,15 +1316,15 @@ function drawShieldStatus() {
     ctx.save();
     ctx.textAlign = "center";
     ctx.font = "bold 11px sans-serif";
-    ctx.fillStyle = warning ? "#ffc66e" : "#9bfff5";
-    ctx.shadowColor = warning ? "#ffad55" : "#5cfff1";
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
     ctx.shadowBlur = 10;
     ctx.fillText(label, canvas.width / 2, barY);
     ctx.shadowBlur = 0;
     ctx.fillStyle = "rgba(255,255,255,.16)";
     ctx.fillRect(barX, barY + 8, barWidth, 4);
-    ctx.fillStyle = warning ? "#ffbd69" : "#79fff3";
-    const progress = state.shieldFade > 0 ? state.shieldFade / 0.6 : remaining / 5;
+    ctx.fillStyle = color;
+    const progress = speedActive ? state.speedBoost / 7 : state.shieldFade > 0 ? state.shieldFade / 0.6 : remaining / 5;
     ctx.fillRect(barX, barY + 8, barWidth * Math.max(0, Math.min(1, progress)), 4);
     ctx.restore();
 }
@@ -1384,6 +1439,14 @@ bindTouchButton(leftBtn, "left");
 bindTouchButton(rightBtn, "right");
 
 playBtn.addEventListener("click", startGame);
+if (powerTipsToggle && powerTipsPanel) {
+    powerTipsToggle.addEventListener("click", () => {
+        const opening = powerTipsPanel.hidden;
+        powerTipsPanel.hidden = !opening;
+        powerTipsToggle.setAttribute("aria-expanded", String(opening));
+        powerTipsToggle.querySelector("span").textContent = opening ? "－" : "＋";
+    });
+}
 restartBtn.addEventListener("click", startGame);
 menuBtn.addEventListener("click", () => {
     state.running = false;
