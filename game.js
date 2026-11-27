@@ -122,16 +122,23 @@ function currentPilotName() {
     return currentUser?.user_metadata?.username || currentUser?.user_metadata?.full_name ||
         currentUser?.user_metadata?.name || currentUser?.email?.split("@")[0] || "Pilot";
 }
-function setAvatar(imageUrl) {
+function setAvatar(imageUrl, seed = currentPilotName()) {
+    // Match the leaderboard's fallback: one stable DiceBear avatar for this pilot.
+    const fallbackUrl = generatedPilotAvatar(seed);
+    const resolvedUrl = imageUrl || fallbackUrl;
     [headerAvatar, profileAvatar].forEach(img => {
-        if (imageUrl) { img.src = imageUrl; img.hidden = false; }
-        else { img.removeAttribute("src"); img.hidden = true; }
+        img.onerror = () => {
+            img.onerror = null;
+            img.src = fallbackUrl;
+        };
+        img.src = resolvedUrl;
+        img.hidden = false;
     });
-    const initials = currentPilotName().trim().charAt(0).toUpperCase() || "P";
+    const initials = String(seed || "P").trim().charAt(0).toUpperCase() || "P";
     headerAvatarFallback.textContent = initials;
     profileAvatarFallback.textContent = initials;
-    headerAvatarFallback.hidden = Boolean(imageUrl);
-    profileAvatarFallback.hidden = Boolean(imageUrl);
+    headerAvatarFallback.hidden = true;
+    profileAvatarFallback.hidden = true;
 }
 async function refreshProfileUI() {
     if (!currentUser) return;
@@ -140,7 +147,7 @@ async function refreshProfileUI() {
     profileNameInput.value = name;
     profileDisplayName.textContent = name;
     profileJoined.textContent = data?.created_at ? "Joined " + new Date(data.created_at).toLocaleDateString() : "";
-    setAvatar(data?.avatar_url || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || "");
+    setAvatar(data?.avatar_url || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || "", name);
     const isGoogle = currentUser.app_metadata?.provider === "google" ||
         currentUser.identities?.some(identity => identity.provider === "google");
     profileSecurityNote.textContent = isGoogle
