@@ -343,6 +343,7 @@ async function initializeCommunity() {
     // the account UI. Do not manually exchange the same authorization code.
     supabaseClient.auth.onAuthStateChange((_event, session) => {
         currentUser = session?.user || null;
+        if (!currentUser) currentRunId = null;
         renderAuthState();
         if (currentUser) window.setTimeout(() => loadLeaderboard(), 0);
     });
