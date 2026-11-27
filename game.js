@@ -268,7 +268,7 @@ async function loadLeaderboard() {
         .eq("id", currentUser.id)
         .maybeSingle();
     const ownName = ownProfile?.username || currentPilotName();
-    const ownAvatar = avatarById[currentUser.id] || ownProfile?.avatar_url || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || generatedPilotAvatar(ownName);
+    const ownAvatar = ownProfile?.avatar_url || avatarById[currentUser.id] || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || generatedPilotAvatar(ownName);
     // Keep the player card and their leaderboard row in sync, even when their profile is outside the top ten.
     avatarById[currentUser.id] = ownAvatar;
     profileName.textContent = ownName;
