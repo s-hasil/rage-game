@@ -612,3 +612,23 @@ body.playing .gameover-screen { inset:6px; }
   }
   body.playing .game-heading { flex-basis:18px; min-height:18px; margin-bottom:1px; }
 }
+
+
+/* ASTRIXAL leaderboard: top ten beside the signed-in player's profile card. */
+body.player-authenticated .community-panel .community-grid {
+  grid-template-columns:minmax(0,1.7fr) minmax(230px,.8fr) !important;
+  align-items:start;
+}
+body.player-authenticated .community-panel .gate-leaderboard {
+  grid-column:auto !important;
+  width:100% !important;
+}
+body.player-authenticated .community-panel .leaderboard-profile-card {
+  display:block !important;
+  grid-column:auto !important;
+}
+@media(max-width:760px) {
+  body.player-authenticated .community-panel .community-grid {
+    grid-template-columns:minmax(0,1fr) !important;
+  }
+}
