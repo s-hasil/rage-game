@@ -1061,3 +1061,100 @@ body[data-control-mode="tilt"] .touch-controls { display:none !important; }
   #pauseOverlay { align-items:flex-start !important; }
   #pauseOverlay .pause-card { margin:auto !important; }
 }
+
+
+/* ASTRIXAL pause screen — matched to the approved neon flight-control reference. */
+#pauseOverlay {
+  position:absolute !important; inset:8px !important; z-index:50 !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  box-sizing:border-box !important; padding:12px !important; overflow-y:auto !important;
+  background:rgba(1,8,18,.78) !important;
+  -webkit-backdrop-filter:blur(8px) saturate(1.2); backdrop-filter:blur(8px) saturate(1.2);
+}
+#pauseOverlay[hidden] { display:none !important; }
+#pauseOverlay .pause-card {
+  position:relative !important; display:flex !important; flex-direction:column !important;
+  gap:0 !important; width:min(560px,100%) !important; min-width:0 !important;
+  max-width:100% !important; max-height:100% !important; height:auto !important;
+  box-sizing:border-box !important; overflow-y:auto !important; margin:auto !important;
+  padding:clamp(17px,3.5vw,28px) !important;
+  border:1.5px solid #8afaff !important; border-radius:26px !important;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,183,255,.14),transparent 48%),linear-gradient(155deg,rgba(5,25,43,.98),rgba(1,9,20,.98)) !important;
+  box-shadow:0 0 0 1px rgba(89,224,255,.16),0 0 26px rgba(0,215,255,.22),inset 0 0 32px rgba(0,174,255,.08) !important;
+  color:#f5fbff !important; text-align:center !important;
+}
+#pauseOverlay .pause-title-wrap { display:flex !important; align-items:center !important; justify-content:center !important; gap:13px !important; width:100% !important; margin:0 0 12px !important; }
+#pauseOverlay .pause-title-wrap h2 { display:block !important; flex:0 0 auto !important; margin:0 !important; color:#f4fbff !important; font:800 clamp(26px,6vw,39px)/1 "Barlow Condensed",sans-serif !important; letter-spacing:.025em !important; text-shadow:0 0 18px rgba(103,232,249,.28) !important; }
+#pauseOverlay .pause-title-wrap h2 span { color:#67e8f9 !important; }
+#pauseOverlay .pause-title-line { display:block !important; flex:1 1 32px !important; max-width:55px !important; height:2px !important; background:linear-gradient(90deg,transparent,#64f3ff) !important; box-shadow:0 0 8px #37eaff !important; }
+#pauseOverlay .pause-title-line:last-child { transform:rotate(180deg); }
+#pauseOverlay .pause-eyebrow { display:flex !important; align-items:center !important; justify-content:center !important; gap:12px !important; margin:0 0 14px !important; color:#f1fbff !important; font:700 10px/1.4 "DM Mono",monospace !important; letter-spacing:.28em !important; }
+#pauseOverlay .pause-eyebrow span { display:block !important; width:36px !important; height:2px !important; background:linear-gradient(90deg,transparent,#42dff7) !important; }
+#pauseOverlay .pause-eyebrow span:last-child { transform:rotate(180deg); }
+#pauseOverlay .pause-instruction { display:block !important; margin:0 0 18px !important; color:#e0edf8 !important; font:500 clamp(12px,2.8vw,15px)/1.45 "Manrope",sans-serif !important; }
+#pauseOverlay .pause-control-list { display:grid !important; grid-template-columns:minmax(0,1fr) !important; gap:12px !important; width:100% !important; min-width:0 !important; }
+#pauseOverlay label.pause-control-option {
+  position:relative !important; display:grid !important;
+  grid-template-columns:minmax(84px,29%) minmax(0,1fr) 24px !important;
+  align-items:center !important; column-gap:14px !important;
+  width:100% !important; min-width:0 !important; min-height:96px !important;
+  box-sizing:border-box !important; margin:0 !important; padding:12px 14px !important;
+  border:1px solid rgba(34,174,218,.7) !important; border-radius:17px !important;
+  background:linear-gradient(110deg,rgba(2,23,39,.96),rgba(3,16,30,.98)) !important;
+  color:#edf8ff !important; text-align:left !important; cursor:pointer !important;
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease !important;
+}
+#pauseOverlay label.pause-control-option:has(input:checked) {
+  border:2px solid #48f5ff !important;
+  background:linear-gradient(110deg,rgba(0,54,68,.92),rgba(2,22,38,.98)) !important;
+  box-shadow:0 0 0 1px rgba(71,244,255,.28),0 0 19px rgba(0,231,255,.32),inset 0 0 24px rgba(0,220,255,.1) !important;
+}
+#pauseOverlay .pause-control-option input { position:absolute !important; opacity:0 !important; width:1px !important; height:1px !important; margin:0 !important; }
+#pauseOverlay .pause-option-icon {
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  gap:5px !important; width:100% !important; min-width:0 !important; min-height:55px !important;
+  margin:0 !important; padding:4px !important; border-right:1px solid rgba(61,215,245,.38) !important;
+  color:#c9fbff !important; font:700 25px/1 Arial,sans-serif !important;
+  text-shadow:0 0 9px rgba(62,232,255,.7) !important;
+}
+#pauseOverlay .pause-icon-buttons i { display:grid !important; place-items:center !important; width:34px !important; height:34px !important; border:2px solid #5ceeff !important; border-radius:9px !important; font-style:normal !important; }
+#pauseOverlay .pause-icon-split { position:relative !important; border:2px solid #66eaff !important; border-radius:11px !important; font-size:24px !important; }
+#pauseOverlay .pause-icon-split:after { content:"" !important; position:absolute !important; top:0 !important; bottom:0 !important; left:50% !important; border-left:2px dashed #66eaff !important; }
+#pauseOverlay .pause-icon-tilt { font-size:25px !important; }
+#pauseOverlay .pause-option-copy { display:flex !important; flex-direction:column !important; align-items:flex-start !important; justify-content:center !important; gap:5px !important; min-width:0 !important; width:100% !important; margin:0 !important; }
+#pauseOverlay .pause-option-copy b { display:block !important; margin:0 !important; color:#f5fbff !important; font:800 clamp(12px,3.1vw,17px)/1.2 "Manrope",sans-serif !important; letter-spacing:0 !important; white-space:normal !important; }
+#pauseOverlay .pause-option-copy small { display:block !important; margin:0 !important; color:#d0dfed !important; font:500 clamp(10px,2.4vw,13px)/1.35 "Manrope",sans-serif !important; white-space:normal !important; }
+#pauseOverlay .pause-radio { display:block !important; width:22px !important; height:22px !important; box-sizing:border-box !important; border:2px solid #e4f4ff !important; border-radius:50% !important; background:transparent !important; }
+#pauseOverlay label.pause-control-option:has(input:checked) .pause-radio { border:2px solid #50f5ff !important; background:radial-gradient(circle,#fff 0 28%,#55f6ff 32% 66%,transparent 70%) !important; box-shadow:0 0 12px #4cefff !important; }
+#pauseOverlay .pause-control-message { display:block !important; margin:9px 0 10px !important; color:#90afc4 !important; font:500 9px/1.35 "Manrope",sans-serif !important; }
+#pauseOverlay .pause-resume-btn,#pauseOverlay .pause-restart-btn {
+  display:flex !important; align-items:center !important; justify-content:center !important; gap:13px !important;
+  width:100% !important; min-height:54px !important; margin:0 !important; padding:11px 14px !important;
+  border-radius:28px !important; cursor:pointer !important; touch-action:manipulation !important;
+  font:800 clamp(13px,3.3vw,17px)/1.2 "Manrope",sans-serif !important; letter-spacing:.035em !important;
+}
+#pauseOverlay .pause-resume-btn { border:2px solid #62f7ff !important; color:#f5ffff !important; background:linear-gradient(100deg,rgba(0,185,205,.22),rgba(0,116,180,.22)) !important; box-shadow:0 0 0 1px rgba(68,240,255,.18),0 0 20px rgba(0,231,255,.42),inset 0 0 18px rgba(0,221,255,.13) !important; }
+#pauseOverlay .pause-resume-btn span { font-size:21px !important; }
+#pauseOverlay .pause-restart-btn { width:88% !important; min-height:46px !important; margin:10px auto 0 !important; border:1.5px solid #8ba9bd !important; color:#f0f7ff !important; background:rgba(9,29,45,.86) !important; }
+#pauseOverlay .pause-restart-btn span { font-size:22px !important; }
+@media(max-width:760px) {
+  #pauseOverlay { inset:5px !important; padding:9px !important; }
+  #pauseOverlay .pause-card { width:min(560px,100%) !important; padding:16px 13px !important; border-radius:22px !important; }
+  #pauseOverlay .pause-title-wrap { gap:8px !important; margin-bottom:10px !important; }
+  #pauseOverlay .pause-title-wrap h2 { font-size:clamp(25px,7vw,34px) !important; }
+  #pauseOverlay .pause-eyebrow { margin-bottom:10px !important; }
+  #pauseOverlay .pause-instruction { margin-bottom:13px !important; }
+  #pauseOverlay .pause-control-list { gap:9px !important; }
+  #pauseOverlay label.pause-control-option { grid-template-columns:minmax(76px,27%) minmax(0,1fr) 21px !important; column-gap:10px !important; min-height:84px !important; padding:9px 10px !important; border-radius:14px !important; }
+  #pauseOverlay .pause-option-icon { min-height:50px !important; }
+  #pauseOverlay .pause-icon-buttons i { width:29px !important; height:32px !important; }
+  #pauseOverlay .pause-radio { width:20px !important; height:20px !important; }
+  #pauseOverlay .pause-control-message { margin:7px 0 8px !important; }
+  #pauseOverlay .pause-resume-btn { min-height:49px !important; }
+  #pauseOverlay .pause-restart-btn { min-height:43px !important; margin-top:8px !important; }
+}
+@media(max-height:720px) {
+  #pauseOverlay { align-items:flex-start !important; }
+  #pauseOverlay .pause-card { margin:auto !important; }
+  #pauseOverlay label.pause-control-option { min-height:72px !important; }
+}
