@@ -63,6 +63,7 @@ const googleAuthBtn = document.getElementById("googleAuthBtn");
 const authModeToggle = document.getElementById("authModeToggle");
 const logoutBtn = null;
 const authMessage = document.getElementById("authMessage");
+const authResendBtn = document.getElementById("authResendBtn");
 const playerStatus = document.getElementById("playerStatus");
 const profileMenu = document.getElementById("profileMenu");
 const profileMenuToggle = document.getElementById("profileMenuToggle");
@@ -108,6 +109,7 @@ function setAuthMode(mode) {
     authUsername.required = registering;
     authSubmit.textContent = registering ? "CREATE ACCOUNT" : "SIGN IN";
     authModeToggle.textContent = registering ? "ALREADY REGISTERED? SIGN IN" : "NEW PILOT? CREATE ACCOUNT";
+    authResendBtn.hidden = true;
     showAuthMessage(registering ? "Choose a pilot name and create your account." : "Sign in or create an account to save your high scores.");
 }
 function renderAuthState() {
@@ -121,6 +123,7 @@ function renderAuthState() {
     communityTitle.innerHTML = signedIn ? 'THE <span>LEADERBOARD.</span>' : 'PILOT <span>ACCESS.</span>';
     communityIntro.textContent = signedIn ? "Your pilot account is active. Track your best runs and compare scores with the global community." : "Sign in or create your pilot account to unlock VOIDRUN.";
     authForm.querySelectorAll("label, input, #authSubmit, #authModeToggle, #googleAuthBtn, .auth-divider").forEach(el => { el.hidden = signedIn; });
+    if (signedIn) authResendBtn.hidden = true;
 
     if (signedIn) showAuthMessage("Signed in. Your finished runs will be saved to the global leaderboard.");
     else setAuthMode(authMode);
@@ -1592,7 +1595,7 @@ if (authForm) {
                 });
                 if (error) throw error;
                 if (data.session) showAuthMessage("Account created. You're signed in and ready to fly.");
-                else showAuthMessage("Account created! Check your email for the confirmation link, then sign in.");
+                else { showAuthMessage("Account created. Check Inbox and Spam for the confirmation link. If it does not arrive, use the resend button below."); authResendBtn.hidden = false; }
             } else {
                 const { error } = await supabaseClient.auth.signInWithPassword({
                     email: authEmail.value.trim(),
@@ -1601,10 +1604,14 @@ if (authForm) {
                 if (error) throw error;
             }
         } catch (error) {
-            const message = error.message || "Authentication failed. Please try again.";
-            showAuthMessage(/security purposes|after \d+ seconds|rate limit/i.test(message)
-                ? "Email sign-up is temporarily rate-limited by Supabase. Wait for the timer to finish, or use Continue with Google once Google OAuth is enabled."
-                : message, true);
+            const message = error?.message || String(error || "Authentication failed.");
+            if (/failed to fetch|networkerror|load failed|fetch failed/i.test(message)) {
+                showAuthMessage("Can't reach the account server. Check your internet, turn off VPN/ad-blocking DNS temporarily, then try again. If it keeps happening, the Supabase project URL/network needs checking.", true);
+            } else {
+                showAuthMessage(/security purposes|after \d+ seconds|rate limit/i.test(message)
+                    ? "Email sign-up is temporarily rate-limited. Wait before trying again. For reliable delivery, the site owner must configure custom SMTP in Supabase."
+                    : message, true);
+            }
         } finally {
             authSubmit.disabled = false;
         }
@@ -1624,10 +1631,32 @@ if (authForm) {
             if (error) throw error;
         } catch (error) {
             googleAuthBtn.disabled = false;
-            const message = error.message || "Google sign-in could not start.";
+            const message = error?.message || String(error || "Google sign-in could not start.");
             showAuthMessage(/provider.*not enabled|unsupported provider/i.test(message)
                 ? "Google sign-in is not enabled yet. Enable the Google provider and add its OAuth Client ID and Secret in Supabase Authentication settings."
                 : message, true);
+        }
+    });
+    authResendBtn.addEventListener("click", async () => {
+        const email = authEmail.value.trim();
+        if (!email) return showAuthMessage("Enter the email address you registered with, then try again.", true);
+        authResendBtn.disabled = true;
+        showAuthMessage("Requesting a new confirmation email…");
+        try {
+            const { error } = await supabaseClient.auth.resend({
+                type: "signup",
+                email,
+                options: { emailRedirectTo: "https://s-hasil.github.io/rage-game/" }
+            });
+            if (error) throw error;
+            showAuthMessage("Confirmation request sent. Check Inbox and Spam. If nothing arrives, the project's email/SMTP settings need attention.");
+        } catch (error) {
+            const message = error?.message || String(error || "Could not resend confirmation.");
+            showAuthMessage(/failed to fetch|networkerror|load failed|fetch failed/i.test(message)
+                ? "Could not reach Supabase. Check your connection and try again."
+                : message, true);
+        } finally {
+            authResendBtn.disabled = false;
         }
     });
     authModeToggle.addEventListener("click", () => setAuthMode(authMode === "login" ? "register" : "login"));
