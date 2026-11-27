@@ -1173,3 +1173,24 @@ body[data-control-mode="tilt"] .touch-controls { display:none !important; }
 }
 #splitTouchZone span { pointer-events:none !important; }
 #splitTouchZone { -webkit-user-select:none !important; user-select:none !important; }
+
+
+/* iPhone/iPad Safari: keep interface text from triggering the native selection menu. */
+html, body, .app {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+body * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+input, textarea, select, [contenteditable="true"], [contenteditable=""] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default;
+  touch-action: auto;
+}
