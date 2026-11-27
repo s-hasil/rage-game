@@ -209,7 +209,7 @@ async function loadLeaderboard() {
     }
     leaderboardList.innerHTML = '<li class="leaderboard-empty">Loading top 10 pilots…</li>';
     const { data, error } = await supabaseClient.from("leaderboard")
-        .select("user_id,username,high_score")
+        .select("username,avatar_url,high_score")
         .order("high_score", { ascending: false })
         .limit(10);
     if (error) {
@@ -218,19 +218,12 @@ async function loadLeaderboard() {
     }
 
     const pilots = data || [];
-    const profileIds = pilots.map(pilot => pilot.user_id).filter(Boolean);
-    let avatarById = {};
-    if (profileIds.length) {
-        const { data: profiles } = await supabaseClient.from("profiles")
-            .select("id,avatar_url")
-            .in("id", profileIds);
-        (profiles || []).forEach(profile => { avatarById[profile.id] = profile.avatar_url || ""; });
-    }
+    const avatarByName = {};
+    pilots.forEach(pilot => { avatarByName[pilot.username] = pilot.avatar_url || ""; });
 
-    // Use exactly the same resolved image for the signed-in pilot in both places.
     if (currentUser) {
         const ownMetadataAvatar = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || "";
-        avatarById[currentUser.id] = avatarById[currentUser.id] || ownMetadataAvatar || generatedPilotAvatar(currentPilotName());
+        avatarByName[currentPilotName()] = avatarByName[currentPilotName()] || ownMetadataAvatar || generatedPilotAvatar(currentPilotName());
     }
 
     leaderboardList.innerHTML = "";
@@ -248,7 +241,7 @@ async function loadLeaderboard() {
             const avatar = document.createElement("span");
             avatar.className = "leaderboard-avatar";
             const pilotName = pilot.username || "Unknown Pilot";
-            const avatarUrl = avatarById[pilot.user_id] || generatedPilotAvatar(pilotName);
+            const avatarUrl = avatarByName[pilotName] || generatedPilotAvatar(pilotName);
             const image = document.createElement("img");
             image.src = avatarUrl;
             image.alt = "";
@@ -290,9 +283,8 @@ async function loadLeaderboard() {
         .eq("id", currentUser.id)
         .maybeSingle();
     const ownName = ownProfile?.username || currentPilotName();
-    const ownAvatar = ownProfile?.avatar_url || avatarById[currentUser.id] || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || generatedPilotAvatar(ownName);
+    const ownAvatar = ownProfile?.avatar_url || avatarByName[ownName] || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || generatedPilotAvatar(ownName);
     // Keep the player card and their leaderboard row in sync, even when their profile is outside the top ten.
-    avatarById[currentUser.id] = ownAvatar;
     profileName.textContent = ownName;
     profileFallback.textContent = ownName.trim().charAt(0).toUpperCase() || "P";
     profileAvatar.hidden = false;
@@ -303,7 +295,7 @@ async function loadLeaderboard() {
     };
     profileAvatar.src = ownAvatar;
 
-    const ownRank = pilots.findIndex(pilot => pilot.user_id === currentUser.id);
+    const ownRank = pilots.findIndex(pilot => pilot.username === ownName);
     const ownLeaderboardRow = ownRank >= 0 ? pilots[ownRank] : null;
     profileRank.textContent = ownLeaderboardRow ? "#" + (ownRank + 1) : "—";
     profileScore.textContent = ownLeaderboardRow ? Number(ownLeaderboardRow.high_score || 0).toLocaleString() : "—";
