@@ -51,6 +51,8 @@ const supabaseClient = window.supabase?.createClient
     : null;
 let currentUser = null;
 let authMode = "login";
+let currentRunId = null;
+let startingRun = false;
 
 const authForm = document.getElementById("authForm");
 const authTitle = document.getElementById("authTitle");
@@ -87,6 +89,7 @@ const leaderboardList = document.getElementById("leaderboardList");
 async function signOutPlayer() {
     const { error } = await supabaseClient.auth.signOut();
     if (error) { showAuthMessage(error.message, true); showProfileMessage(error.message, true); return; }
+    currentRunId = null;
     state.running = false;
     state.paused = false;
     state.gameOver = false;
@@ -305,14 +308,27 @@ async function loadLeaderboard() {
     profileScore.textContent = ownLeaderboardRow ? Number(ownLeaderboardRow.high_score || 0).toLocaleString() : "—";
 }
 async function saveRunScore(score) {
-    if (!supabaseClient || !currentUser || score <= 0) return;
-    const { error } = await supabaseClient.from("scores").insert({ user_id: currentUser.id, score: Math.floor(score) });
+    if (!supabaseClient || !currentUser || !currentRunId || score <= 0) return false;
+
+    const runId = currentRunId;
+    currentRunId = null;
+
+    const { error } = await supabaseClient.rpc("submit_run", {
+        p_run_id: runId,
+        p_score: Math.floor(score)
+    });
+
     if (error) {
-        showAuthMessage("Your run ended, but the score could not be saved: " + error.message, true);
-        return;
+        showAuthMessage(
+            "Your run ended, but the verified score could not be saved: " + error.message,
+            true
+        );
+        return false;
     }
-    showAuthMessage("Score saved to the global leaderboard.");
+
+    showAuthMessage("Verified score saved to the global leaderboard.");
     await loadLeaderboard();
+    return true;
 }
 async function initializeCommunity() {
     if (!supabaseClient) {
@@ -529,12 +545,25 @@ function setScreen(mode) {
     if (pauseOverlay) pauseOverlay.hidden = true;
 }
 
-function startGame() {
+async function startGame() {
     if (!currentUser) {
         showAuthMessage("Sign in or create an account before launching a mission.", true);
         document.getElementById("communityPanel")?.scrollIntoView({ behavior: "smooth" });
         return;
     }
+    if (startingRun) return;
+    startingRun = true;
+    try {
+        const { data: runId, error } = await supabaseClient.rpc("start_run");
+        if (error || !runId) {
+            showAuthMessage("Could not start a verified run: " + (error?.message || "unknown error"), true);
+            return;
+        }
+        currentRunId = runId;
+    } finally {
+        startingRun = false;
+    }
+
     input.interacted = true;
     audio.resume().then(() => {
         if (state.running && input.soundOn) audio.startAmbience();
@@ -585,12 +614,16 @@ function endGame() {
     void damageFlash.offsetWidth;
     damageFlash.classList.add("show");
 
-    finalScore.textContent = Math.floor(state.score);
-    saveRunScore(Math.floor(state.score));
-    if (state.score > highScore) {
-        highScore = Math.floor(state.score);
-        localStorage.setItem(STORAGE_KEY, String(highScore));
-    }
+    const final = Math.floor(state.score);
+    finalScore.textContent = final;
+    saveRunScore(final).then((saved) => {
+        if (saved && final > highScore) {
+            highScore = final;
+            localStorage.setItem(STORAGE_KEY, String(highScore));
+            finalBest.textContent = highScore;
+            updateScoreDisplays();
+        }
+    });
     finalBest.textContent = highScore;
     updateScoreDisplays();
     setScreen("gameOver");
@@ -1549,6 +1582,7 @@ if (powerTipsToggle && powerTipsPanel) {
 }
 restartBtn.addEventListener("click", startGame);
 menuBtn.addEventListener("click", () => {
+    currentRunId = null;
     state.running = false;
     state.paused = false;
     if (pauseOverlay) pauseOverlay.hidden = true;
