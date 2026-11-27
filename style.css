@@ -1158,3 +1158,18 @@ body[data-control-mode="tilt"] .touch-controls { display:none !important; }
   #pauseOverlay .pause-card { margin:auto !important; }
   #pauseOverlay label.pause-control-option { min-height:72px !important; }
 }
+
+
+/* Mobile game input hardening: no accidental text selection, callout or page zoom. */
+.game-shell, .game-shell *, #game, #splitTouchZone, #splitTouchZone * {
+  -webkit-user-select:none !important;
+  user-select:none !important;
+  -webkit-touch-callout:none !important;
+  -webkit-tap-highlight-color:transparent !important;
+}
+.game-shell, #game, #splitTouchZone {
+  touch-action:none !important;
+  overscroll-behavior:contain !important;
+}
+#splitTouchZone span { pointer-events:none !important; }
+#splitTouchZone { -webkit-user-select:none !important; user-select:none !important; }
