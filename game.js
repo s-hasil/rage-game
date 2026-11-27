@@ -1491,6 +1491,8 @@ bindTouchButton(rightBtn, "right");
 
 if (pauseBtn) pauseBtn.addEventListener("click", pauseGame);
 if (resumeBtn) resumeBtn.addEventListener("click", resumeGame);
+const pauseRestartBtn = document.getElementById("pauseRestartBtn");
+if (pauseRestartBtn) pauseRestartBtn.addEventListener("click", () => startGame());
 controlModeInputs.forEach((radio) => radio.addEventListener("change", async () => {
     if (!radio.checked) return;
     setControlMode(radio.value);
